@@ -2,7 +2,7 @@
 
 How a session is described, stored, built and run. This is the core of the app: the builder, Import from LLM, the Workout tab and Export all read and write this one structure.
 
-Status: **draft for review.** Nothing is built against it yet.
+Status: **draft v0.2.** Format questions answered (Section 7). Nothing is built against it yet.
 
 ---
 
