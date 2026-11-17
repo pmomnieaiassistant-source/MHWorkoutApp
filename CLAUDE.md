@@ -32,6 +32,7 @@ Two primary users to design for:
 - Each user is fully private: no awareness of other users, no visibility into anyone else's data.
 - Data is not sensitive; app-level separation within one sheet is acceptable. Keep every record keyed by user and date.
 - **No social features for now.** Design so an opt-in feed and leaderboard can be added later without restructuring data.
+- **Exception: public sessions and blocks.** A session or block can be marked **Make public**. Other users then see it (with the owner's name) under "Shared by others" when adding sessions or filling weeks. Adding one **copies** it into their own library (blocks bring copies of their sessions), so the owner's later edits never change anyone else's plan. Everything else stays private.
 
 ## Navigation: four bottom tabs
 
@@ -142,8 +143,9 @@ Full draft spec: `docs/session-format.md` (formats, syntax, examples, Sheet layo
 - **Timed screen, phase 1:** no audio cues, no push. The clock is computed from timestamps so it is correct after the screen locks or the app is reopened; screen kept awake during timed blocks. Locked-screen audio cues (pre-rendered audio track) and music handling are a later build.
 - **Run / erg intervals:** in scope for the timed screen (work by time, distance or calories; targets for pace, split, watts, zone). Distance/calorie reps use a "Lap done" button.
 - **Home tab tracking:** keep it simple to start, a log of entries per measurement; charts later.
+- **Public sessions/blocks:** opt-in per item; others add a copy (see Users and privacy).
 - **Lifter friend:** no need to wait; he will test the app and changes come later.
 
 ## Open questions
 
-- Assumed unless Paul says otherwise: a new Sheet and Apps Script project (separate from the family app) deployed from Paul's Google account; personal-link sign-in (`?u=<key>`, passcode per user in Script Properties) as in the family app.
+- Adding users: add `Name=key` to the `USERS` script property (no redeploy) and send them `…/?u=key`. See `backend/SETUP.md`.

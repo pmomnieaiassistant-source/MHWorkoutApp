@@ -47,3 +47,12 @@ https://pmomnieaiassistant-source.github.io/MHWorkoutApp/?u=THEIR_KEY
 ```
 
 The key is remembered on the phone. Data entered before the back end existed stays on that phone; it is not moved to the Sheet automatically.
+
+## Adding a new user later
+
+1. Make up a long random key for them (letters and numbers, 10+ characters).
+2. Apps Script → **Project Settings → Script properties → `USERS`**: add `, Name=key` to the end. Example: `Paul=k7Fq2xP9mW, Dan=Zr4tY8bN1c, Sam=Q2wE9rT5yU`. Save. No redeploy needed.
+3. Send them their link: `https://pmomnieaiassistant-source.github.io/MHWorkoutApp/?u=key`. They open it in Safari, then Share → Add to Home Screen.
+4. If they have a Whoop, they tap **Home → Connect Whoop**. The Whoop sandbox allows up to 10 members; if Whoop refuses their sign-in, check the members list for your app in the Whoop Developer Dashboard.
+
+To remove someone, delete their entry from `USERS`. Their rows stay in the Sheet (column `user`) until you delete them.

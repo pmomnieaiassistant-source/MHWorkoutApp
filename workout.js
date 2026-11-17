@@ -537,7 +537,7 @@ let MISS_LATER = false;
 // =====================================================================
 (function boot() {
   const c = LS.get('data', null);
-  if (c && c.tables) { TABLES.forEach(t => S[t] = c.tables[t] || []); ME = c.me || ''; WHOOP = c.whoop || WHOOP; }
+  if (c && c.tables) { TABLES.forEach(t => S[t] = c.tables[t] || []); ME = c.me || ''; WHOOP = c.whoop || WHOOP; if (c.shared) SHARED = c.shared; }
   render();
   if (serverMode()) loadServer().then(() => { if (!MISS_LATER) checkMissed(); });
   else setTimeout(checkMissed, 600);

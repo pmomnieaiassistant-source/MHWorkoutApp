@@ -56,6 +56,12 @@ Today's sessions come from the Planner. If there is more than one, they are list
 
 Rule for a date: if `PlanDays` says the day is overridden, or the week is not linked, use `PlanItems` for that date. Otherwise use the linked block's `BlockItems` for that weekday. When a block changes, days already in the past get their planned sessions copied into `PlanItems` first, so history doesn't shift.
 
+## Public sessions and blocks
+
+- Session and block editors have a **Make public** toggle. Public items show a blue "Public" chip.
+- Other users see them under **Shared by others**: in the session picker (adding to a day, a block, starting or logging a workout), in the Sessions list (on by default; ☰ → "Public sessions from others"), in the Blocks list, and in **Fill with block** / **Fill several weeks**.
+- Adding one makes a **copy** in your own library, marked "From Dan". A public block also copies its sessions. Adding the same item twice reuses the copy you already have. The owner's later edits do not reach copies.
+
 ## Missed sessions
 
 When the app opens and a past day has a planned session with no workout recorded (done in the app or entered by hand), a pop-up asks:

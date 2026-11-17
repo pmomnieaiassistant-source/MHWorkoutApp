@@ -50,7 +50,7 @@ const stars = (n, act) => `<span class="stars">${[1, 2, 3, 4, 5].map(i => `<span
 // ---------- data ----------
 const TABLES = ['Sessions', 'Blocks', 'PlanWeeks', 'PlanDays', 'Workouts', 'Measurements', 'Maxes', 'Settings', 'WhoopDays', 'WhoopWorkouts'];
 const S = {}; TABLES.forEach(t => S[t] = []);
-let ME = '', WHOOP = { configured: false, connected: false, lastSync: null }, ONLINE = true;
+let ME = '', WHOOP = { configured: false, connected: false, lastSync: null }, ONLINE = true, SHARED = { Sessions: [], Blocks: [] };
 const CFG = window.MH_CONFIG || {};
 
 // Personal link: ?u=<key>. Kept on the phone so the home-screen app remembers it.
@@ -73,7 +73,7 @@ function applyOp(o) {
   if (i >= 0) arr[i] = o.row; else arr.push(o.row);
 }
 let saveT = 0;
-const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => LS.set('data', { me: ME, whoop: WHOOP, tables: S }), 200); };
+const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => LS.set('data', { me: ME, whoop: WHOOP, tables: S, shared: SHARED }), 200); };
 let QUEUE = LS.get('queue', []);
 
 /** Write rows: [{t, row}] (whole row, insert or replace) or [{t, del: id}]. Applied here at once, then sent to the server. */
@@ -113,6 +113,7 @@ async function loadServer() {
   try {
     const j = await api('load');
     TABLES.forEach(t => S[t] = j.tables[t] || []);
+    if (j.shared) SHARED = j.shared;
     QUEUE.forEach(applyOp);
     persist(); setOnline(true); afterData(); render();
     flush();
@@ -324,21 +325,53 @@ function menu(title, items) {
   openOv({ render: () => `${title ? `<h2>${esc(title)}</h2>` : ''}${items.filter(Boolean).map(it => it.html ? it.html : `<button class="menu-item ${it.danger ? 'danger' : ''}" data-a="${it.a}" data-v="${esc(it.v == null ? '' : it.v)}" data-close="1"><span class="grow">${esc(it.label)}</span>${it.on != null ? `<span style="color:${it.on ? 'var(--lime)' : 'var(--dim)'}">${ic('check', 20)}</span>` : ''}</button>`).join('')}` });
 }
 
-/** Pick a session from the library. Resolves session id, 'rest', or null. */
+// ---------- shared (public) sessions and blocks ----------
+// Adding someone else's public session or block copies it into your own library, so their later edits never change your plan.
+const sharedSes = id => SHARED.Sessions.find(s => s.id === id) || SHARED.Blocks.flatMap(b => b.sessions || []).find(s => s.id === id);
+function adoptSessionOps(sh, ops) {
+  const have = S.Sessions.find(s => s.fromShared === sh.owner + '|' + sh.id) || ops.map(o => o.row).find(r => r && r.fromShared === sh.owner + '|' + sh.id);
+  if (have) return have.id;
+  const id = uid();
+  ops.push({ t: 'Sessions', row: { id, name: sh.name, tags: sh.tags || [], text: sh.text, rating: 0, comments: [], created: Date.now(), fromShared: sh.owner + '|' + sh.id, from: sh.owner } });
+  return id;
+}
+async function adoptSession(sharedId) {
+  const sh = sharedSes(sharedId); if (!sh) return null;
+  const ops = [], id = adoptSessionOps(sh, ops);
+  if (ops.length) { await write(ops); toast(`Added “${sh.name}” to your sessions`); }
+  return id;
+}
+async function adoptBlock(sharedId) {
+  const b = SHARED.Blocks.find(x => x.id === sharedId); if (!b) return null;
+  const have = S.Blocks.find(x => x.fromShared === b.owner + '|' + b.id); if (have) return have.id;
+  const ops = [], map = {};
+  (b.sessions || []).forEach(s => { map[s.id] = adoptSessionOps(s, ops); });
+  const id = uid();
+  ops.push({ t: 'Blocks', row: { id, name: b.name, days: b.days.map(d => d.map(x => x === 'rest' ? 'rest' : map[x]).filter(Boolean)), fromShared: b.owner + '|' + b.id, from: b.owner } });
+  await write(ops); toast(`Added ${b.name} to your blocks`);
+  return id;
+}
+const sharedRow = (s, a, close) => `<button class="menu-item" data-a="${a}" data-v="shared:${esc(s.id)}" ${close ? 'data-close="1"' : ''}><span class="grow">${esc(s.name)}<div class="small muted">by ${esc(s.owner)}${s.text != null ? ' · ' + estMin(parsed(s)) + ' min' : ''}</div></span><span class="chip blue" style="font-size:11px">Public</span></button>`;
+
+/** Pick a session from the library (yours, then other people's public ones). Resolves session id, 'rest', or null. */
 function pickSession({ title = 'Add a session', rest = false } = {}) {
   return new Promise(res => {
     let q = '', done = false;
     const o = openOv({
       render: () => {
-        const list = S.Sessions.filter(s => !q || norm(s.name + (s.tags || []).join('')).includes(norm(q))).sort((a, b) => a.name.localeCompare(b.name));
+        const match = s => !q || norm(s.name + (s.tags || []).join('') + (s.owner || '')).includes(norm(q));
+        const list = S.Sessions.filter(match).sort((a, b) => a.name.localeCompare(b.name));
+        const mine = new Set(S.Sessions.map(s => s.fromShared).filter(Boolean));
+        const shared = SHARED.Sessions.filter(s => match(s) && !mine.has(s.owner + '|' + s.id)).sort((a, b) => a.name.localeCompare(b.name));
         return `<h2>${esc(title)}</h2><input id="pickQ" placeholder="Search sessions" value="${esc(q)}" style="margin:8px 0 6px">
           ${rest ? `<button class="menu-item" data-a="pickRes" data-v="rest"><span class="grow">Rest day</span></button>` : ''}
-          ${list.map(s => `<button class="menu-item" data-a="pickRes" data-v="${s.id}"><span class="grow">${esc(s.name)}<div class="small muted">${estMin(parsed(s))} min${(s.tags || []).length ? ' · ' + esc(s.tags.join(', ')) : ''}</div></span>${ic('chev', 18)}</button>`).join('') || '<div class="empty">No sessions yet. Create one in Program → Sessions.</div>'}`;
+          ${list.map(s => `<button class="menu-item" data-a="pickRes" data-v="${s.id}"><span class="grow">${esc(s.name)}<div class="small muted">${estMin(parsed(s))} min${(s.tags || []).length ? ' · ' + esc(s.tags.join(', ')) : ''}</div></span>${ic('chev', 18)}</button>`).join('') || (shared.length ? '' : '<div class="empty">No sessions yet. Create one in Program → Sessions.</div>')}
+          ${shared.length ? `<div class="lbl">Shared by others</div>${shared.map(s => sharedRow(s, 'pickRes')).join('')}` : ''}`;
       },
       after: o => { const i = o.box.querySelector('#pickQ'); i.oninput = () => { q = i.value; const p = i.selectionStart; o.redraw(); const n = o.box.querySelector('#pickQ'); n.focus(); n.setSelectionRange(p, p); }; },
       onClose: () => { if (!done) res(null); }
     });
-    o.pick = v => { done = true; res(v); closeOv(o); };
+    o.pick = async v => { done = true; closeOv(o); res(/^shared:/.test(v) ? await adoptSession(v.slice(7)) : v); };
   });
 }
 
