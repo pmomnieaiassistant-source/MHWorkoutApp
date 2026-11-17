@@ -53,17 +53,20 @@ function sessionBody(p, opts = {}) {
     ${c.notes.map(n => `<div class="ln" style="color:var(--text)">${esc(n)}</div>`).join('')}</div>`).join('')}`).join('');
 }
 
-A.sesOpen = id => {
+A.sesOpen = (id, el, e, ctx) => {
   openOv({
     full: true, live: true,
     render: () => {
       const s = byId('Sessions', id);
       if (!s) return `<div class="fbar"><button class="ibtn" data-a="closeOv">${ic('back')}</button></div><div class="empty">Deleted.</div>`;
       const p = parsed(s), ld = lastDone(id);
-      return `<div class="fbar"><button class="ibtn" data-a="closeOv">${ic('back')}</button><div class="t"></div><button class="ibtn" data-a="sesMenu" data-v="${id}">${ic('menu')}</button></div>
+      const st = ctx ? dayStatus(ctx.d, id) : '';
+      return `<div class="fbar"><button class="ibtn" data-a="closeOv">${ic('back')}</button><div class="t">${ctx ? esc(relDay(ctx.d)) : ''}</div><button class="ibtn" data-a="sesMenu" data-v="${ctx ? `${id}|${ctx.d}|${ctx.j}` : id}">${ic('menu')}</button></div>
       <div class="fbody">
-        <h1 style="margin:4px 0 6px;font-size:30px;letter-spacing:-.02em">${esc(s.name)}</h1>
-        <div class="row">${stars(s.rating, 'sesRate')}<span class="small muted">${estMin(p)} min · ${ld ? 'Last done ' + fmtMD(ld) : 'Not done yet'}</span></div>
+        <div class="hero lime"><div class="fmt">${ctx ? `Planned · ${esc(fmtD(ctx.d))}${st === 'done' ? ' · done' : st === 'skipped' ? ' · missed' : ''}` : 'Session'}</div>
+        <h1>${esc(s.name)}</h1><div class="muted">${estMin(p)} min · ${allCards(p).length} card${allCards(p).length === 1 ? '' : 's'}</div></div>
+        <div style="height:12px"></div>
+        <div class="row">${stars(s.rating, 'sesRate')}<span class="small muted">${ld ? 'Last done ' + fmtMD(ld) : 'Not done yet'}</span></div>
         ${s.public || s.shared ? `<div class="chips" style="margin-top:10px">${s.public ? '<span class="chip blue">Public</span>' : ''}${s.shared ? '<span class="chip">Copied from a public session</span>' : ''}</div>` : ''}
         ${(s.tags || []).length ? `<div class="chips" style="margin-top:12px">${s.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>` : ''}
         ${sessionBody(p)}
@@ -71,13 +74,22 @@ A.sesOpen = id => {
         ${(s.comments || []).map((c, i) => `<div class="card" style="margin:8px 0"><div class="small muted">${fmtD(c.date)}</div><div style="white-space:pre-wrap;margin-top:2px">${esc(c.text)}</div></div>`).join('') || '<div class="small muted">No comments yet.</div>'}
         <div class="row" style="margin-top:10px"><input id="cmIn" placeholder="Add a comment"><button class="btn sm" data-a="sesComment" data-v="${id}">Add</button></div>
       </div>
-      <div class="fbottom"><div class="btns" style="margin:0"><button class="btn gray" data-a="sesToPlan" data-v="${id}">Add to planner</button><button class="btn" data-a="sesStart" data-v="${id}">${ic('play', 18)}Start</button></div></div>`;
+      <div class="fbottom"><div class="btns" style="margin:0">${ctx
+        ? `<button class="btn gray" data-a="dayMove" data-v="${ctx.d}|${ctx.j}">Move</button>${!st && ctx.d <= today() ? `<button class="btn" data-a="dayStart" data-v="${ctx.d}|${id}" data-close="1">${ic('play', 18)}${ctx.d === today() ? 'Start' : 'Log it'}</button>` : `<button class="btn" data-a="sesStart" data-v="${id}">${ic('play', 18)}Start</button>`}`
+        : `<button class="btn gray" data-a="sesToPlan" data-v="${id}">Add to planner</button><button class="btn" data-a="sesStart" data-v="${id}">${ic('play', 18)}Start</button>`}</div></div>`;
     }
   }).sid = id;
 };
 A.sesRate = (n, el) => { const o = ovOf(el), s = byId('Sessions', o.sid); write({ t: 'Sessions', row: Object.assign({}, s, { rating: s.rating === +n ? 0 : +n }) }); };
 A.sesComment = (id, el) => { const o = ovOf(el), t = o.box.querySelector('#cmIn').value.trim(); if (!t) return; const s = byId('Sessions', id); write({ t: 'Sessions', row: Object.assign({}, s, { comments: (s.comments || []).concat([{ date: today(), text: t }]) }) }); };
-A.sesMenu = id => menu('', [{ label: 'Edit', a: 'sesEdit', v: id }, { label: 'Duplicate', a: 'sesDup', v: id }, { label: 'Delete', a: 'sesDel', v: id, danger: true }]);
+A.sesMenu = v => {
+  const [id, d, j] = v.split('|');
+  menu('', [d ? { label: 'Move to another day', a: 'dayMove', v: d + '|' + j } : null, d && isChanged(d) ? { label: 'Reset day to block', a: 'dayReset', v: d } : null,
+    d ? { label: 'Remove from ' + fmtD(d), a: 'dayRemoveClose', v: d + '|' + j, danger: true } : null,
+    d ? { html: '<div class="lbl">Session</div>' } : null,
+    { label: 'Edit', a: 'sesEdit', v: id }, { label: 'Duplicate', a: 'sesDup', v: id }, { label: 'Delete session', a: 'sesDel', v: id, danger: true }]);
+};
+A.dayRemoveClose = async v => { closeOv(OV.find(o => o.full)); await A.dayRemove(v); };
 A.sesDup = id => { const s = byId('Sessions', id); write({ t: 'Sessions', row: Object.assign({}, s, { id: uid(), name: s.name + ' (copy)', rating: 0, comments: [], created: Date.now() }) }); toast('Duplicated'); };
 A.sesDel = async id => {
   const r = await ask({ title: 'Delete this session?', body: 'Past workouts stay in your Feed. It will be removed from blocks and future planner days.', buttons: [{ label: 'Cancel', v: 'no', cls: 'gray' }, { label: 'Delete', v: 'yes', cls: 'danger' }] });
@@ -317,6 +329,7 @@ A.pthis = () => { PW = mondayOf(today()); render(); };
 A.dayAdd = async d => { const v = await pickSession({ title: 'Add to ' + fmtD(d), rest: true }); if (!v) return; const cur = planFor(d); await editDays({ [d]: v === 'rest' ? ['rest'] : cur.filter(x => x !== 'rest').concat([v]) }); };
 A.dayItem = v => {
   const [d, j] = v.split('|'), items = planFor(d), x = items[+j], s = byId('Sessions', x), st = dayStatus(d, x);
+  if (s) return A.sesOpen(x, null, null, { d, j: +j });
   menu(x === 'rest' ? 'Rest day' : (s ? s.name : ''), [
     s ? { label: 'Open session', a: 'sesOpen', v: x } : null,
     s && !st && d <= today() ? { label: d === today() ? 'Start now' : 'Log this workout', a: 'dayStart', v: `${d}|${x}` } : null,
@@ -333,6 +346,7 @@ A.dayMove = v => {
   menu('Move to', [0, 1, 2, 3, 4, 5, 6].map(i => addDays(mon, i)).filter(x => x !== d).map(x => ({ label: fmtD(x), a: 'dayMoveTo', v: `${d}|${j}|${x}` })));
 };
 A.dayMoveTo = v => {
+  OV.filter(o => o.full).forEach(o => closeOv(o));
   const [d, j, to] = v.split('|'), from = planFor(d), x = from.splice(+j, 1)[0];
   editDays({ [d]: from, [to]: planFor(to).filter(y => y !== 'rest' || x === 'rest').concat([x]) });
 };

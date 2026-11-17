@@ -448,11 +448,49 @@ function vFeed() {
   if (!shown) html += `<div class="empty"><b>Nothing here yet</b>Finish a workout or connect Whoop on Home.</div>`;
   return html + `<div style="text-align:center;margin-top:18px"><button class="btn gray sm" data-a="feedMore">Show earlier days</button></div>`;
 }
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+const ringHtml = (v, col, label) => `<div class="ring" style="background:conic-gradient(${col} ${v}%, rgba(255,255,255,.08) 0)"><div style="color:${col}">${label}</div></div>`;
+function stackHtml(parts) {
+  const tot = parts.reduce((a, p) => a + (p[1] || 0), 0); if (!tot) return '';
+  return `<div class="stack">${parts.filter(p => p[1]).map(p => `<div style="flex:${p[1]};background:${p[2]}"></div>`).join('')}</div>
+    <div class="legend">${parts.filter(p => p[1]).map(p => `<span><i style="background:${p[2]}"></i>${p[0]} ${hm(p[1])} · ${pct(p[1], tot)}%</span>`).join('')}</div>`;
+}
+const ZCOL = ['#3A4350', '#5AB0FF', '#3DDC84', '#C6F432', '#FF8A3D', '#FF5A5F'];
+function zonesHtml(z) {
+  if (!z) return '';
+  const v = ['zone_zero_milli', 'zone_one_milli', 'zone_two_milli', 'zone_three_milli', 'zone_four_milli', 'zone_five_milli'].map(k => z[k] || 0);
+  if (!v.some(Boolean)) return '';
+  return `<div class="sec">Heart rate zones</div><div class="card" style="margin-top:0">${stackHtml(v.map((ms, i) => [`Zone ${i}`, ms, ZCOL[i]]))}</div>`;
+}
+const backBar = (title, menuA, menuV) => `<div class="fbar"><button class="ibtn" data-a="closeOv">${ic('back')}</button><div class="t">${title || ''}</div>${menuA ? `<button class="ibtn" data-a="${menuA}" data-v="${esc(menuV)}">${ic('menu')}</button>` : '<span style="width:40px"></span>'}</div>`;
+
+A.dayOpen = d => openOv({
+  full: true, live: true,
+  render: () => {
+    const wd = byId('WhoopDays', d) || {}, sl = wd.sleep || {};
+    const asleep = sl.inBed ? sl.inBed - (sl.awake || 0) : 0;
+    const wos = S.Workouts.filter(w => w.date === d), linked = new Set(S.Workouts.map(w => w.whoopId).filter(Boolean));
+    const wonly = S.WhoopWorkouts.filter(x => x.date === d && !linked.has(x.id));
+    const rc = wd.recovery != null ? recCol(wd.recovery) : 'var(--dim)';
+    const tile = (l, v, u) => v == null || v === '' ? '' : `<div><span>${l}</span><b>${v}</b>${u ? `<div class="small muted">${u}</div>` : ''}</div>`;
+    return backBar(relDay(d)) + `<div class="fbody">
+      <div class="hero blue"><div class="row"><div class="grow"><div class="fmt">Day summary</div><h1>${esc(fmtLong(d))}</h1>
+        <div class="muted">${sl.end ? `Woke ${fmtClock(sl.end)}` : ''}${sl.start ? ` · asleep from ${fmtClock(sl.start)}` : ''}</div></div>
+        ${wd.recovery != null ? ringHtml(Math.round(wd.recovery), rc, Math.round(wd.recovery) + '%') : ''}</div></div>
+      <div class="sec">Recovery</div><div class="kv" style="margin-top:0">${tile('Recovery', wd.recovery != null ? Math.round(wd.recovery) + '%' : null)}${tile('HRV', wd.hrv != null ? Math.round(wd.hrv) : null, 'ms')}${tile('Resting HR', wd.rhr != null ? Math.round(wd.rhr) : null, 'bpm')}${tile('SpO2', wd.spo2 != null ? (+wd.spo2).toFixed(1) + '%' : null)}${tile('Skin temp', wd.skinTemp != null ? (+wd.skinTemp).toFixed(1) + '°' : null, 'C')}</div>
+      ${sl.inBed ? `<div class="sec">Sleep</div><div class="kv" style="margin-top:0">${tile('Asleep', hm(asleep))}${tile('In bed', hm(sl.inBed))}${tile('Performance', sl.perf != null ? Math.round(sl.perf) + '%' : null)}${tile('Efficiency', sl.eff != null ? Math.round(sl.eff) + '%' : null)}${tile('Resp. rate', sl.resp != null ? (+sl.resp).toFixed(1) : null, 'per min')}</div>
+        <div class="card">${stackHtml([['Awake', sl.awake, '#3A4350'], ['Light', sl.light, '#5AB0FF'], ['Deep', sl.deep, '#7C6CFF'], ['REM', sl.rem, '#C6F432']])}</div>` : ''}
+      ${wd.strain != null ? `<div class="sec">Strain</div><div class="kv" style="margin-top:0">${tile('Day strain', (+wd.strain).toFixed(1))}${tile('Calories', wd.kj ? kcal(wd.kj) : null, 'kcal')}${tile('Avg HR', wd.avgHr, 'bpm')}${tile('Max HR', wd.maxHr, 'bpm')}</div>` : ''}
+      ${wos.length || wonly.length ? `<div class="sec">Workouts</div>${wos.map(woCard).join('')}${wonly.map(whoopOnlyCard).join('')}` : ''}
+      ${!byId('WhoopDays', d) ? '<div class="empty">No Whoop data for this day.</div>' : ''}</div>`;
+  }
+});
+
 const wakeAt = (d, wd) => Date.parse((wd.sleep && wd.sleep.end) || wd.cycleStart || '') || pd(d).getTime() + 6 * 3600000;
 function dayCard(d, wd) {
   const sl = wd.sleep || {};
   const sleepMs = sl.inBed ? sl.inBed - (sl.awake || 0) : null;
-  return `<div class="card k-day"><div class="row"><div class="grow"><div class="fmt">Day summary</div><div class="date" style="margin-top:4px">${sl.end ? 'Woke ' + fmtClock(sl.end) : 'Recovery and sleep'}</div><div class="small muted">${wd.recovery != null ? 'Recovery' : ''}</div></div>
+  return `<div class="card k-day tap" data-a="dayOpen" data-v="${d}"><div class="row"><div class="grow"><div class="fmt">Day summary</div><div class="date" style="margin-top:4px">${sl.end ? 'Woke ' + fmtClock(sl.end) : 'Recovery and sleep'}</div><div class="small muted">${wd.recovery != null ? 'Recovery' : ''}</div></div>
     ${wd.recovery != null ? `<div class="rec" style="background:${recCol(wd.recovery)}22;color:${recCol(wd.recovery)}">${Math.round(wd.recovery)}%</div>` : ''}</div>
     <div class="kv">
       ${sleepMs ? `<div><span>Sleep</span><b>${hm(sleepMs)}</b>${sl.perf != null ? `<div class="small muted">${Math.round(sl.perf)}% perf</div>` : ''}</div>` : ''}
@@ -504,15 +542,15 @@ A.woOpen = (id, el, e) => {
       const x = whoopFor(w), cards = (w.log && w.log.cards) || [];
       const dur = w.start && w.end ? (Date.parse(w.end) - Date.parse(w.start)) / 1000 : 0;
       const sameDay = S.WhoopWorkouts.filter(y => y.date === w.date);
-      return `<div class="fbar"><button class="ibtn" data-a="closeOv">${ic('back')}</button><div class="t">${fmtD(w.date)}</div><button class="ibtn" data-a="woMenu2" data-v="${w.id}">${ic('menu')}</button></div>
+      return backBar(relDay(w.date), 'woMenu2', w.id) + `
       <div class="fbody">
-        <h1 style="margin:6px 0 4px;font-size:28px;letter-spacing:-.02em">${esc(w.name)}</h1>
-        <div class="muted">${w.status === 'skipped' ? 'Missed' : (w.start ? fmtClock(w.start) + (w.end ? '–' + fmtClock(w.end) : '') : '') + (dur ? ' · ' + durTxt(dur) : '')}${w.manual ? ' · entered by hand' : ''}</div>
+        <div class="hero ${w.status === 'skipped' ? 'orange' : 'lime'}"><div class="fmt">${w.status === 'skipped' ? 'Missed workout' : w.manual ? 'Workout · entered by hand' : 'Workout'}</div><h1>${esc(w.name)}</h1>
+        <div class="muted">${w.status === 'skipped' ? 'Missed' : (w.start ? fmtClock(w.start) + (w.end ? '–' + fmtClock(w.end) : '') : '') + (dur ? ' · ' + durTxt(dur) : '')}</div></div>
         ${w.status !== 'skipped' ? `<button class="btn block" style="margin-top:16px" data-a="woExport" data-v="${w.id}">${ic('share', 19)}Export data</button>` : ''}
         ${w.status !== 'skipped' ? `<div class="card"><div class="row"><div class="grow"><div class="fmt" style="color:var(--blue)">Whoop</div>
           ${x ? `<b>${esc(x.sport)}</b> <span class="small muted">${fmtClock(x.start)}–${fmtClock(x.end)}${w.whoopLink === 'auto' ? ' · matched by time' : ''}</span>` : `<span class="muted small">${sameDay.length ? 'Not linked' : 'No Whoop workout that day'}</span>`}</div>
           ${x ? `<button class="chip" data-a="woUnlink" data-v="${w.id}">Unlink</button>` : sameDay.length ? `<button class="chip lime" data-a="woLink" data-v="${w.id}">${ic('link', 15)}Link</button>` : ''}</div>
-          ${x ? `<div class="kv"><div><span>Strain</span><b>${x.strain != null ? (+x.strain).toFixed(1) : '–'}</b></div><div><span>Avg HR</span><b>${x.avgHr || '–'}</b></div><div><span>Max HR</span><b>${x.maxHr || '–'}</b></div>${x.kj ? `<div><span>Calories</span><b>${kcal(x.kj)}</b></div>` : ''}${x.dist ? `<div><span>Distance</span><b>${(x.dist / 1000).toFixed(2)}</b><div class="small muted">km</div></div>` : ''}</div>` : ''}</div>` : ''}
+          </div>${x ? `<div style="margin-top:-4px">${whoopStats(x)}</div>` : ''}` : ''}
         ${cards.length ? `<div class="sec">What was done</div>${cards.map(c => `<div class="pcard"><div class="row"><div class="grow ttl">${esc(c.title)}</div><span class="chip ${c.status === 'done' ? 'lime' : c.status === 'skipped' ? 'orange' : ''}">${c.status === 'done' ? 'Done' : c.status === 'skipped' ? 'Skipped' : 'Not done'}</span></div><div class="ln">${esc(logLine(c))}</div>${c.note ? `<div class="ln warn">${esc(c.note)}</div>` : ''}</div>`).join('')}` : ''}
         ${w.notes || w.note ? `<div class="sec">Notes</div><div class="card" style="margin-top:0;white-space:pre-wrap">${esc(w.notes || w.note)}</div>` : ''}
         ${w.photo ? `<img class="photo" style="width:100%;border-radius:16px;margin-top:12px" src="${esc(photoUrl(w.photo))}" alt="">` : ''}
@@ -537,11 +575,21 @@ A.woLinkTo = v => {
   ops.push({ t: 'Workouts', row: Object.assign({}, w, { whoopId: xid, whoopLink: 'manual' }, w.manual ? { start: y.start, end: y.end } : {}) });
   write(ops);
 };
-A.whoopOpen = id => {
-  const x = byId('WhoopWorkouts', id), mine = S.Workouts.filter(w => w.date === x.date && w.status === 'done');
-  menu(`${x.sport} · ${fmtClock(x.start)}`, [{ html: `<div class="kv" style="margin-bottom:10px"><div><span>Strain</span><b>${x.strain != null ? (+x.strain).toFixed(1) : '–'}</b></div><div><span>Avg HR</span><b>${x.avgHr || '–'}</b></div><div><span>Max HR</span><b>${x.maxHr || '–'}</b></div>${x.kj ? `<div><span>Calories</span><b>${kcal(x.kj)}</b></div>` : ''}</div>` }]
-    .concat(mine.map(w => ({ label: `Link to “${w.name}”`, a: 'woLinkTo', v: w.id + '|' + id }))));
-};
+function whoopStats(x) {
+  const dur = (Date.parse(x.end) - Date.parse(x.start)) / 1000;
+  return `<div class="kv" style="margin-top:0"><div><span>Strain</span><b>${x.strain != null ? (+x.strain).toFixed(1) : '–'}</b></div><div><span>Duration</span><b>${durTxt(dur)}</b></div><div><span>Avg HR</span><b>${x.avgHr || '–'}</b><div class="small muted">bpm</div></div><div><span>Max HR</span><b>${x.maxHr || '–'}</b><div class="small muted">bpm</div></div>${x.kj ? `<div><span>Calories</span><b>${kcal(x.kj)}</b><div class="small muted">kcal</div></div>` : ''}${x.dist ? `<div><span>Distance</span><b>${(x.dist / 1000).toFixed(2)}</b><div class="small muted">km</div></div>` : ''}</div>${zonesHtml(x.zones)}`;
+}
+A.whoopOpen = id => openOv({
+  full: true, live: true,
+  render: () => {
+    const x = byId('WhoopWorkouts', id); if (!x) return backBar('') + '<div class="empty">Not found.</div>';
+    const linkedTo = S.Workouts.find(w => w.whoopId === id), mine = S.Workouts.filter(w => w.date === x.date && w.status === 'done' && w !== linkedTo);
+    return backBar(relDay(x.date)) + `<div class="fbody">
+      <div class="hero lime"><div class="fmt">Workout · from Whoop</div><h1>${esc(x.sport)}</h1><div class="muted">${fmtD(x.date)} · ${fmtClock(x.start)}–${fmtClock(x.end)}</div></div>
+      <div class="sec">Stats</div>${whoopStats(x)}
+      ${linkedTo ? `<div class="sec">Linked</div>${woCard(linkedTo)}` : mine.length ? `<div class="sec">Link to an MH Lift workout</div>${mine.map(w => `<button class="menu-item" data-a="woLinkTo" data-v="${w.id}|${esc(id)}"><span class="grow">${esc(w.name)}<div class="small muted">${w.start ? fmtClock(w.start) : ''}</div></span>${ic('link', 18)}</button>`).join('')}` : ''}</div>`;
+  }
+});
 
 // Export
 function logLine(c) {
