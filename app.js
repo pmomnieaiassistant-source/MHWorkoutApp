@@ -475,7 +475,7 @@ A.dayOpen = d => openOv({
     const tile = (l, v, u) => v == null || v === '' ? '' : `<div><span>${l}</span><b>${v}</b>${u ? `<div class="small muted">${u}</div>` : ''}</div>`;
     return backBar(relDay(d)) + `<div class="fbody">
       <div class="hero blue"><div class="row"><div class="grow"><div class="fmt">Day summary</div><h1>${esc(fmtLong(d))}</h1>
-        <div class="muted">${sl.end ? `Woke ${fmtClock(sl.end)}` : ''}${sl.start ? ` · asleep from ${fmtClock(sl.start)}` : ''}</div></div>
+        <div class="muted">${sl.start ? `Bed ${fmtClock(sl.start)}` : ''}${sl.start && sl.end ? ' · ' : ''}${sl.end ? `Woke ${fmtClock(sl.end)}` : ''}</div></div>
         ${wd.recovery != null ? ringHtml(Math.round(wd.recovery), rc, Math.round(wd.recovery) + '%') : ''}</div></div>
       <div class="sec">Recovery</div><div class="kv" style="margin-top:0">${tile('Recovery', wd.recovery != null ? Math.round(wd.recovery) + '%' : null)}${tile('HRV', wd.hrv != null ? Math.round(wd.hrv) : null, 'ms')}${tile('Resting HR', wd.rhr != null ? Math.round(wd.rhr) : null, 'bpm')}${tile('SpO2', wd.spo2 != null ? (+wd.spo2).toFixed(1) + '%' : null)}${tile('Skin temp', wd.skinTemp != null ? (+wd.skinTemp).toFixed(1) + '°' : null, 'C')}</div>
       ${sl.inBed ? `<div class="sec">Sleep</div><div class="kv" style="margin-top:0">${tile('Asleep', hm(asleep))}${tile('In bed', hm(sl.inBed))}${tile('Performance', sl.perf != null ? Math.round(sl.perf) + '%' : null)}${tile('Efficiency', sl.eff != null ? Math.round(sl.eff) + '%' : null)}${tile('Resp. rate', sl.resp != null ? (+sl.resp).toFixed(1) : null, 'per min')}</div>
@@ -517,7 +517,7 @@ const wakeAt = (d, wd) => Date.parse((wd.sleep && wd.sleep.end) || wd.cycleStart
 function dayCard(d, wd) {
   const sl = wd.sleep || {};
   const sleepMs = sl.inBed ? sl.inBed - (sl.awake || 0) : null;
-  return `<div class="card k-day tap" data-a="dayOpen" data-v="${d}"><div class="row"><div class="grow"><div class="fmt">Day summary</div><div class="date" style="margin-top:4px">${sl.end ? 'Woke ' + fmtClock(sl.end) : 'Recovery and sleep'}</div><div class="small muted">${wd.recovery != null ? 'Recovery' : ''}</div></div>
+  return `<div class="card k-day tap" data-a="dayOpen" data-v="${d}"><div class="row"><div class="grow"><div class="fmt">Day summary</div><div class="date" style="margin-top:4px;font-size:16px">${sl.start || sl.end ? [sl.start ? 'Bed ' + fmtClock(sl.start) : '', sl.end ? 'Woke ' + fmtClock(sl.end) : ''].filter(Boolean).join(' · ') : 'Recovery and sleep'}</div></div>
     ${wd.recovery != null ? `<div class="rec" style="background:${recCol(wd.recovery)}22;color:${recCol(wd.recovery)}">${Math.round(wd.recovery)}%</div>` : ''}</div>
     <div class="kv">
       ${sleepMs ? `<div><span>Sleep</span><b>${hm(sleepMs)}</b>${sl.perf != null ? `<div class="small muted">${Math.round(sl.perf)}% perf</div>` : ''}</div>` : ''}
@@ -693,7 +693,8 @@ function vHome() {
       <button class="menu-item" style="margin-top:8px;border-top:1px solid var(--line)" data-a="whoopFillOpen"><span class="grow">Update measurements from Whoop<div class="small muted">${(() => { const on = WFILL.filter(([k]) => wfill()[k]).map(([k]) => k); return on.length ? on.join(', ') : 'Off'; })()}</div></span>${ic('chev', 18)}</button><button class="btn ghost block sm" style="margin-top:6px" data-a="whoopDisconnect">Disconnect</button>`
     : `<div class="muted small">Bring in sleep, recovery, strain and workouts. You'll sign in to Whoop and come back here.</div><button class="btn block" style="margin-top:14px" data-a="whoopConnect">${ic('heart', 19)}Connect Whoop</button>`}</div>
 
-  <div class="sec"><span>Measurements</span><a class="small" data-a="mTypeAdd">+ Type</a></div>
+  <div class="sec"><span>Status</span><a class="small" data-a="mTypeAdd">+ Type</a></div>
+  ${sleepAvgHtml()}
   <div class="card" style="padding:4px 16px">${MTYPES().map(([t, u]) => { const m = latestM(t); return `<div class="list-item tap" data-a="mOpen" data-v="${esc(t)}"><div class="grow"><b>${esc(t)}</b><div class="small muted">${m ? fmtD(m.date) + (m.src === 'whoop' ? ' · from Whoop' : '') : 'No entries yet'}</div></div><div style="font-weight:800;font-size:18px">${m ? esc(fmtMeas(t, m.value)) + ` <span class="small muted">${esc(t === 'Height' && u === 'in' ? '' : (m.unit || u))}</span>` : ''}</div>${ic('chev', 18)}</div>`; }).join('')}</div>
 
   <div class="sec"><span>Maxes</span><a class="small" data-a="maxEdit">+ Add</a></div>
@@ -711,6 +712,26 @@ function vHome() {
     <div class="btns"><a class="btn gray sm" href="syntax.txt" download="MH-Lift-session-syntax.txt">Download guide</a><button class="btn gray sm" data-a="copyGuide">${ic('copy', 17)}Copy guide</button></div></div>
   <div class="small dim" style="text-align:center;margin-top:24px">MH Lift</div>`;
 }
+// Average bedtime, wake time and sleep from Whoop (main sleeps only). Clock times are averaged around noon so 11 PM and 1 AM average to midnight.
+function sleepAvgs(days) {
+  const from = addDays(today(), -days), list = S.WhoopDays.filter(d => d.id > from && d.sleep && d.sleep.start && d.sleep.end);
+  if (!list.length) return null;
+  const minsFromNoon = iso => { const t = new Date(iso); return ((t.getHours() * 60 + t.getMinutes()) - 720 + 1440) % 1440; };
+  const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+  const clock = m => { const t = (Math.round(m) + 720) % 1440; return new Date(2000, 0, 1, Math.floor(t / 60), t % 60).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); };
+  const asleep = list.map(d => (d.sleep.inBed || 0) - (d.sleep.awake || 0)).filter(Boolean);
+  return { n: list.length, bed: clock(avg(list.map(d => minsFromNoon(d.sleep.start)))), wake: clock(avg(list.map(d => minsFromNoon(d.sleep.end)))), dur: asleep.length ? hm(avg(asleep)) : '–' };
+}
+let SLEEPWIN = 7;
+function sleepAvgHtml() {
+  const a = sleepAvgs(SLEEPWIN);
+  if (!a) return `<div class="card" style="margin-top:0"><div class="small muted">Average bedtime, wake time and sleep appear here once Whoop is connected.</div></div>`;
+  return `<div class="card" style="margin-top:0"><div class="row"><b class="grow">Sleep averages</b><div class="seg" style="padding:3px;flex:none">${[7, 30].map(n => `<button class="${SLEEPWIN === n ? 'on' : ''}" style="padding:5px 12px;font-size:13px;white-space:nowrap" data-a="sleepWin" data-v="${n}">${n}d</button>`).join('')}</div></div>
+    <div class="kv" style="grid-template-columns:repeat(3,1fr)"><div><span>Bedtime</span><b style="font-size:17px">${a.bed}</b></div><div><span>Wake time</span><b style="font-size:17px">${a.wake}</b></div><div><span>Sleep</span><b style="font-size:17px">${a.dur}</b><div class="small muted">per night</div></div></div>
+    <div class="small dim" style="margin-top:8px">From Whoop · ${a.n} night${a.n === 1 ? '' : 's'}</div></div>`;
+}
+A.sleepWin = n => { SLEEPWIN = +n; render(); };
+
 const fmtMeas = (t, v) => t === 'Height' && UNIT() === 'lb' ? `${Math.floor(v / 12)}′${Math.round(v % 12)}″` : (Math.round(v * 10) / 10);
 A.homeMenu = () => menu('Home', [{ label: 'Add a measurement type', a: 'mTypeAdd' }, serverMode() ? { label: 'Reload data from the Sheet', a: 'reload' } : null, WHOOP.connected ? { label: 'Sync Whoop now', a: 'whoopSyncNow' } : null]);
 A.reload = () => { loadServer(); toast('Reloading'); };

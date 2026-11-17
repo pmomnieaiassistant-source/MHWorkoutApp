@@ -46,7 +46,7 @@ Visual direction: very sleek, modern, card-based, app-like. Emphasis on swipeabl
 ## Feed tab
 
 A private, scrolling timeline.
-- **Daily overview card** for every day: sleep, recovery, and headline Whoop numbers.
+- **Daily overview card** for every day: sleep (with bedtime and wake time), recovery, and headline Whoop numbers.
 - **Workout cards** placed between the daily cards:
   - Workouts done in the app. If a Whoop workout overlaps in time, attach its data (heart rate, strain, etc.).
   - Workouts that exist only in Whoop show as their own cards with whatever Whoop recorded.
@@ -103,6 +103,7 @@ Full list in `docs/session-format.md` (straight sets, supersets, circuits, compl
 - Personal tracking over time: weight, height, resting heart rate, max heart rate, plus custom user-defined measurements.
 - Whoop can auto-fill height, weight, max HR (body measurements) and resting HR (recovery). Each is a switch under Home → Whoop → "Update measurements from Whoop"; **all off by default**.
 - Start simple: a log of entries per measurement (charts can come later).
+- The section is called **Status**. It starts with **sleep averages** from Whoop (bedtime, wake time, sleep per night; 7 or 30 days), then the measurements.
 
 ## Import from LLM (session syntax)
 
