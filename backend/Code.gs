@@ -84,13 +84,15 @@ function loadAll(user) {
 /** Sessions and blocks other people marked public. A public block carries copies of its sessions so it can be added whole. */
 function loadShared(user) {
   const parse = r => { try { return JSON.parse(r[4]); } catch (e) { return null; } };
+  // Owners are sent as an opaque token, never a name, so nobody can see who shared what.
+  const tok = n => Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, ScriptApp.getScriptId() + '|' + n)).slice(0, 12);
   const ses = rowsOf('Sessions').vals.filter(r => r[0] !== user).map(r => ({ owner: r[0], d: parse(r) })).filter(x => x.d);
   const byKey = {}; ses.forEach(x => byKey[x.owner + '|' + x.d.id] = x.d);
-  const pick = (d, owner) => ({ id: d.id, name: d.name, tags: d.tags || [], text: d.text || '', owner });
+  const pick = (d, owner) => ({ id: d.id, name: d.name, tags: d.tags || [], text: d.text || '', owner: tok(owner) });
   const Sessions = ses.filter(x => x.d.public).map(x => pick(x.d, x.owner));
   const Blocks = rowsOf('Blocks').vals.filter(r => r[0] !== user).map(r => ({ owner: r[0], d: parse(r) })).filter(x => x.d && x.d.public).map(x => {
     const ids = {}; (x.d.days || []).forEach(day => day.forEach(id => { if (id !== 'rest') ids[id] = 1; }));
-    return { id: x.d.id, name: x.d.name, days: x.d.days, owner: x.owner, sessions: Object.keys(ids).map(id => byKey[x.owner + '|' + id]).filter(Boolean).map(d => pick(d, x.owner)) };
+    return { id: x.d.id, name: x.d.name, days: x.d.days, owner: tok(x.owner), sessions: Object.keys(ids).map(id => byKey[x.owner + '|' + id]).filter(Boolean).map(d => pick(d, x.owner)) };
   });
   return { Sessions, Blocks };
 }

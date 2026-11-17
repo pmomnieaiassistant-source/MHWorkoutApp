@@ -32,7 +32,7 @@ Two primary users to design for:
 - Each user is fully private: no awareness of other users, no visibility into anyone else's data.
 - Data is not sensitive; app-level separation within one sheet is acceptable. Keep every record keyed by user and date.
 - **No social features for now.** Design so an opt-in feed and leaderboard can be added later without restructuring data.
-- **Exception: public sessions and blocks.** A session or block can be marked **Make public**. Other users then see it (with the owner's name) under "Shared by others" when adding sessions or filling weeks. Adding one **copies** it into their own library (blocks bring copies of their sessions), so the owner's later edits never change anyone else's plan. Everything else stays private.
+- **Exception: public sessions and blocks.** A session or block can be marked **Make public**. Other users then see it (without the owner's name; the toggle says "your name will not be shown") under "Shared by others" when adding sessions or filling weeks. Adding one **copies** it into their own library (blocks bring copies of their sessions), so the owner's later edits never change anyone else's plan. Everything else stays private.
 
 ## Navigation: four bottom tabs
 

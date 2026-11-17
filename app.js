@@ -332,7 +332,7 @@ function adoptSessionOps(sh, ops) {
   const have = S.Sessions.find(s => s.fromShared === sh.owner + '|' + sh.id) || ops.map(o => o.row).find(r => r && r.fromShared === sh.owner + '|' + sh.id);
   if (have) return have.id;
   const id = uid();
-  ops.push({ t: 'Sessions', row: { id, name: sh.name, tags: sh.tags || [], text: sh.text, rating: 0, comments: [], created: Date.now(), fromShared: sh.owner + '|' + sh.id, from: sh.owner } });
+  ops.push({ t: 'Sessions', row: { id, name: sh.name, tags: sh.tags || [], text: sh.text, rating: 0, comments: [], created: Date.now(), fromShared: sh.owner + '|' + sh.id, shared: true } });
   return id;
 }
 async function adoptSession(sharedId) {
@@ -347,11 +347,11 @@ async function adoptBlock(sharedId) {
   const ops = [], map = {};
   (b.sessions || []).forEach(s => { map[s.id] = adoptSessionOps(s, ops); });
   const id = uid();
-  ops.push({ t: 'Blocks', row: { id, name: b.name, days: b.days.map(d => d.map(x => x === 'rest' ? 'rest' : map[x]).filter(Boolean)), fromShared: b.owner + '|' + b.id, from: b.owner } });
+  ops.push({ t: 'Blocks', row: { id, name: b.name, days: b.days.map(d => d.map(x => x === 'rest' ? 'rest' : map[x]).filter(Boolean)), fromShared: b.owner + '|' + b.id, shared: true } });
   await write(ops); toast(`Added ${b.name} to your blocks`);
   return id;
 }
-const sharedRow = (s, a, close) => `<button class="menu-item" data-a="${a}" data-v="shared:${esc(s.id)}" ${close ? 'data-close="1"' : ''}><span class="grow">${esc(s.name)}<div class="small muted">by ${esc(s.owner)}${s.text != null ? ' · ' + estMin(parsed(s)) + ' min' : ''}</div></span><span class="chip blue" style="font-size:11px">Public</span></button>`;
+const sharedRow = (s, a, close) => `<button class="menu-item" data-a="${a}" data-v="shared:${esc(s.id)}" ${close ? 'data-close="1"' : ''}><span class="grow">${esc(s.name)}<div class="small muted">${s.text != null ? estMin(parsed(s)) + ' min' : s.sessions ? s.sessions.length + ' sessions' : ''}</div></span><span class="chip blue" style="font-size:11px">Public</span></button>`;
 
 /** Pick a session from the library (yours, then other people's public ones). Resolves session id, 'rest', or null. */
 function pickSession({ title = 'Add a session', rest = false } = {}) {
@@ -359,7 +359,7 @@ function pickSession({ title = 'Add a session', rest = false } = {}) {
     let q = '', done = false;
     const o = openOv({
       render: () => {
-        const match = s => !q || norm(s.name + (s.tags || []).join('') + (s.owner || '')).includes(norm(q));
+        const match = s => !q || norm(s.name + (s.tags || []).join('')).includes(norm(q));
         const list = S.Sessions.filter(match).sort((a, b) => a.name.localeCompare(b.name));
         const mine = new Set(S.Sessions.map(s => s.fromShared).filter(Boolean));
         const shared = SHARED.Sessions.filter(s => match(s) && !mine.has(s.owner + '|' + s.id)).sort((a, b) => a.name.localeCompare(b.name));
@@ -609,7 +609,7 @@ function vHome() {
   <div class="sec">Whoop</div>
   <div class="card">${!serverMode() ? `<div class="muted small">Connecting Whoop needs the back end. Follow backend/SETUP.md, then open the app from your personal link.</div><button class="btn block gray" style="margin-top:12px" disabled>Connect Whoop</button>`
     : wd.connected ? `<div class="row"><div class="rec" style="background:rgba(198,244,50,.12);color:var(--lime);width:44px;height:44px">${ic('heart', 22)}</div><div class="grow"><b>Whoop connected</b><div class="small muted">${wd.lastSync ? 'Last sync ' + new Date(wd.lastSync).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Not synced yet'}</div></div></div>
-      <div class="btns"><button class="btn gray sm" data-a="whoopSyncNow">${ic('sync', 17)}Sync now</button><button class="btn ghost sm" data-a="whoopDisconnect">Disconnect</button></div>`
+      <button class="btn block" style="margin-top:14px" data-a="whoopSyncNow">${ic('sync', 19)}Sync Whoop</button><button class="btn ghost block sm" style="margin-top:6px" data-a="whoopDisconnect">Disconnect</button>`
     : `<div class="muted small">Bring in sleep, recovery, strain and workouts. You'll sign in to Whoop and come back here.</div><button class="btn block" style="margin-top:14px" data-a="whoopConnect">${ic('heart', 19)}Connect Whoop</button>`}</div>
 
   <div class="sec"><span>Measurements</span><a class="small" data-a="mTypeAdd">+ Type</a></div>

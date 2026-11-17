@@ -64,7 +64,7 @@ A.sesOpen = id => {
       <div class="fbody">
         <h1 style="margin:4px 0 6px;font-size:30px;letter-spacing:-.02em">${esc(s.name)}</h1>
         <div class="row">${stars(s.rating, 'sesRate')}<span class="small muted">${estMin(p)} min · ${ld ? 'Last done ' + fmtMD(ld) : 'Not done yet'}</span></div>
-        ${s.public || s.from ? `<div class="chips" style="margin-top:10px">${s.public ? '<span class="chip blue">Public</span>' : ''}${s.from ? `<span class="chip">From ${esc(s.from)}</span>` : ''}</div>` : ''}
+        ${s.public || s.shared ? `<div class="chips" style="margin-top:10px">${s.public ? '<span class="chip blue">Public</span>' : ''}${s.shared ? '<span class="chip">Copied from a public session</span>' : ''}</div>` : ''}
         ${(s.tags || []).length ? `<div class="chips" style="margin-top:12px">${s.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>` : ''}
         ${sessionBody(p)}
         <div class="sec">Comments</div>
@@ -136,7 +136,7 @@ function sesEditor(id) {
 A.seView = (v, el) => { const o = ovOf(el); o.st.view = v; o.redraw(); };
 A.sePub = (v, el) => { const o = ovOf(el); o.st.pub = !o.st.pub; o.redraw(); };
 const pubToggle = (on, a, what) => `<button class="row" data-a="${a}" style="width:100%;margin-top:10px;background:var(--card);border-radius:12px;padding:12px 14px;text-align:left">
-  <div class="grow"><b>Make public</b><div class="small muted">Other MH Lift users can add a copy of this ${what}. Your name is shown with it.</div></div>
+  <div class="grow"><b>Make public</b><div class="small muted">Other MH Lift users can add a copy of this ${what} (your name will not be shown).</div></div>
   <span style="width:46px;height:28px;border-radius:14px;background:${on ? 'var(--lime)' : 'var(--card3)'};position:relative;flex:none;transition:.2s"><span style="position:absolute;top:3px;left:${on ? 21 : 3}px;width:22px;height:22px;border-radius:50%;background:${on ? 'var(--lime-ink)' : 'var(--mute)'};transition:.2s"></span></span></button>`;
 A.seSnip = (i, el) => {
   const o = ovOf(el), x = o.box.querySelector('#seText'), snip = SNIPS[+i][1];
@@ -374,7 +374,7 @@ A.fillMany = () => {
     render: () => {
       const n = st.seq.length * st.repeat, end = n ? addDays(st.start, (n - 1) * 7 + 6) : null;
       return `<h2>Fill several weeks</h2><div class="small muted">Tap blocks in the order you want them. Each week stays linked to its block.</div>
-        <div class="lbl">Blocks</div><div class="chips wrap" style="flex-wrap:wrap">${S.Blocks.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).map(b => `<button class="chip" data-a="fmAdd" data-v="${b.id}">${ic('plus', 13)}${esc(b.name)}</button>`).join('')}${sharedBlocks().map(b => `<button class="chip blue" data-a="fmAdd" data-v="shared:${esc(b.id)}">${ic('plus', 13)}${esc(b.name)} · ${esc(b.owner)}</button>`).join('')}</div>
+        <div class="lbl">Blocks</div><div class="chips wrap" style="flex-wrap:wrap">${S.Blocks.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).map(b => `<button class="chip" data-a="fmAdd" data-v="${b.id}">${ic('plus', 13)}${esc(b.name)}</button>`).join('')}${sharedBlocks().map(b => `<button class="chip blue" data-a="fmAdd" data-v="shared:${esc(b.id)}">${ic('plus', 13)}${esc(b.name)} · shared</button>`).join('')}</div>
         <div class="lbl">Order</div><div class="card" style="margin:0;padding:12px 14px">${st.seq.length ? st.seq.map((id, i) => `<div class="small">Week ${i + 1}: <b>${esc((byId('Blocks', id) || {}).name || '')}</b></div>`).join('') + `<a class="small" data-a="fmClear">Clear</a>` : '<span class="small muted">Nothing yet</span>'}</div>
         <div class="row"><div class="grow"><div class="lbl">Starting</div><select id="fmStart">${weeks.map(w => `<option value="${w}" ${w === st.start ? 'selected' : ''}>Week of ${fmtMD(w)}</option>`).join('')}</select></div>
           <div style="width:110px"><div class="lbl">Repeat</div><select id="fmRep">${[1, 2, 3, 4, 5, 6, 8, 10, 12].map(n => `<option ${n === st.repeat ? 'selected' : ''}>${n}</option>`).join('')}</select></div></div>
