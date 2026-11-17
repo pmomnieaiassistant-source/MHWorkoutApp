@@ -1,6 +1,15 @@
 # MH Lift — Project Brief
 
-This file captures a brainstorm session for a new iPhone workout app. It is the starting spec. Nothing has been built yet. Read this fully before writing code, and confirm open questions with Paul before locking them in.
+This file captures the brainstorm for MH Lift, an iPhone workout app, and the decisions since. Version 1 is built (see "Code map"). Read this fully before changing code, and confirm open questions with Paul before locking them in.
+
+## Code map
+
+- `index.html`: shell and all styles. `app.js`: data layer, helpers, overlays, Feed, Home, Whoop. `program.js`: Sessions, Blocks, Planner. `workout.js`: Workout tab, execution views, timers, manual entry, missed sessions, startup.
+- `parser.js`: session syntax parser (browser and Node). Tests: `node tests/parser.test.js` (runs every example in `docs/session-format.md`).
+- `backend/Code.gs`: Apps Script back end (generic per-user tables, Whoop OAuth and sync, photo upload). Setup: `backend/SETUP.md`.
+- `syntax.txt`: the guide users give to an LLM. `sw.js`: offline shell (bump `VERSION` when shipping changes). `config.js`: `apiUrl`.
+- Without `apiUrl` and a personal key the app runs in local mode (phone storage only).
+- Use the three-bar options button for filters and screen options rather than adding visible controls.
 
 ## Summary
 
@@ -101,7 +110,7 @@ Full draft spec: `docs/session-format.md` (formats, syntax, examples, Sheet layo
 - The app provides a **downloadable syntax instructions file** describing the exact session format, with examples.
 - A user gives that file to any LLM (ChatGPT, Claude, etc.) along with their workout in any form; the LLM returns text in the app's syntax.
 - In Program → Create session → **Import from LLM**, the user pastes that text into a text box.
-- The Apps Script back end parses the fixed syntax into a session.
+- The app parses the fixed syntax (`parser.js`) so the preview is instant; sessions are stored as text.
 - Show a **preview before saving**, flagging any lines that could not be understood. Keep the format forgiving.
 
 ## Export data

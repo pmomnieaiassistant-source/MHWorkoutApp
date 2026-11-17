@@ -362,22 +362,26 @@ Steady 45:00 zone 2
 
 ---
 
-## 5. Data in the Sheet
+## 5. Data in the Sheet (as built)
 
-| Tab | One row per | Key columns |
+Every tab has the same columns: `user | id | date | updated | data`, where `data` is the whole record as JSON. This keeps the back end small and lets records gain fields without changing the Sheet.
+
+| Tab | One row per | Main fields in `data` |
 |---|---|---|
-| `Sessions` | session | user, id, name, tags, json (the full parsed structure), text (the syntax), rating, comments, created, lastDone |
-| `Blocks`, `BlockItems`, `PlanWeeks`, `PlanItems` | see `docs/planner.md` | |
-| `Settings` | user + key | user, key, value (unit, rounding step, rest default...) |
-| `Workouts` | workout done | user, id, sessionId, date, start, end, notes, photo, whoopWorkoutId (match / manual override) |
-| `Sets` | logged set or block result | user, workoutId, cardIdx, stepIdx, setIdx, exercise, reps, load, unit, time, rounds, distance, cal, status (done / skipped), note |
-| `Maxes` | exercise max entry | user, exercise, type (1RM / TM / e1RM), value, unit, date |
-| `Exercises` | known exercise name | name, aliases, equipment, record type (weight+reps / time / distance...) |
-| `Measurements`, `Whoop*` | per Home / Whoop needs | user, date, ... |
+| `Sessions` | session | name, tags, text (the syntax; parsed in the app), rating, comments, created |
+| `Blocks` | block | name, days (7 lists of session ids, or "rest") |
+| `PlanWeeks` | week linked to a block | id = Monday's date, blockId |
+| `PlanDays` | day with its own version | id = date, items (session ids) |
+| `Workouts` | workout done or missed | date, start, end, sessionId, name, status (done / skipped), manual, log (per card: status, note, sets, result), snap (the session as run), notes, photo, whoopId, whoopLink (auto / manual / none) |
+| `Measurements` | entry | date, type, value, unit, src (whoop or blank) |
+| `Maxes` | exercise | exercise, oneRm, tm, unit |
+| `Settings` | setting | id = key (unit, round, rest, mtypes, whoopBody), value |
+| `WhoopDays` | day | recovery, rhr, hrv, spo2, skinTemp, strain, sleep (stages, performance) |
+| `WhoopWorkouts` | Whoop workout | start, end, sport, strain, avgHr, maxHr, kj, dist, zones |
 
-A session is stored whole as JSON in one cell (cells hold up to 50,000 characters, far more than a session needs). The text form is kept beside it so a session can be re-opened as text. Logged sets are one row each so history, charts and "last time you did 5 @ 185" are easy to query.
+The session text is parsed in the app (`parser.js`), not in Apps Script, so the import preview is instant and works offline. Logged sets live inside each workout's `log`; "last time you did this" is worked out from there.
 
-`Maxes` lets a `% TM` or `% 1RM` load show as a real number in the Workout tab. If no max is saved the card shows "75% TM" and asks for the max the first time.
+`Maxes` turns a `% TM` or `% 1RM` load into a real number in the Workout tab, rounded to the user's step. With no max saved the set shows the percentage and a hint to add one on Home.
 
 ---
 

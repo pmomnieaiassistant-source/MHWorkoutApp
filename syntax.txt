@@ -1,0 +1,163 @@
+MH LIFT SESSION FORMAT
+Instructions for an AI assistant (ChatGPT, Claude, etc.)
+
+You will be given a workout in any form (notes, a photo transcript, a program from a book or website). Rewrite it in the format below so it can be pasted into the MH Lift app. Reply with ONLY the formatted text in a single code block, no explanations. If something does not fit the format, put it on a "> " note line rather than leaving it out.
+
+------------------------------------------------------------
+STRUCTURE
+------------------------------------------------------------
+# Session name             Starts a session. Several sessions in one reply are fine, one "#" each
+                           (e.g. a 4-week program = "# Week 1 Day 1", "# Week 1 Day 2", ...).
+tags: strength, barbell    Optional, right under the session name.
+notes: anything            Optional session note.
+## Phase name              Starts a phase: Warm-up, Strength, Conditioning, Cool-down, etc.
+Card line                  A line that does NOT start with "-" is a card (one exercise or one block).
+- detail line              Lines starting with "- " belong to the card above.
+  - nested line            Indented "- " lines belong to the item above (parts of a complex, alternatives).
+> note                     Shown to the athlete during the workout.
+// comment                 Ignored.
+
+------------------------------------------------------------
+ONE EXERCISE WITH SETS
+------------------------------------------------------------
+Back Squat 5x5 @ 225 lb rest 3:00
+Incline DB Press 4x8-10 @ 70 lb RIR 2 rest 2:00 tempo 3-1-1-0
+Press 3x5+ @ 115 lb             "+" = last set as many reps as possible
+Pull-up 3x8                     no load = body weight
+Plank 3x30s
+Pistol Squat 3x5/side
+
+When sets differ, write the name alone, then one "- " line per set:
+Deadlift
+- warmup 5 @ 135 lb
+- warmup 3 @ 225 lb
+- 5 @ 75% TM
+- 3 @ 85% TM
+- 1+ @ 95% TM
+rest: 3:00
+
+Set line kinds: warmup, backoff, top, drop, mini, amrap (default is a working set).
+- backoff 3x5 @ -10%                    (percent of the set before)
+- drop 10 @ 50 lb > 8 @ 40 lb > max @ 30 lb
+- mini 5 x 5 rest 5s                    (myo-rep mini sets)
+Trap Bar Jump 3 x 6/2 @ 95 lb           (cluster: 3 sets of 6 done in clusters of 2)
+intra-rest: 20s
+
+------------------------------------------------------------
+LOADS (after "@")
+------------------------------------------------------------
+@ 225 lb   @ 100 kg   @ 24kg   @ 2x24kg (two kettlebells)   @ 95/65 lb (Rx men/women)
+@ 75%      (of 1 rep max)      @ 75% TM (of training max)
+@ RPE 8    RIR 2
+@ BW       @ BW+25 lb          @ BW-30 lb (assisted)
+@ red band   @ damper 6   @ level 8   @ 5K pace   @ split 1:55, 28 spm   @ 250 W   @ zone 2
+Units: lb or kg. Times: 90s, 1:30, 2 min. Distances: 400m, 1 km, 1 mi, 50 ft. Calories: 15 cal.
+
+------------------------------------------------------------
+BLOCKS (card line is the format, "- " lines are the movements)
+------------------------------------------------------------
+Superset x3 rest 90s
+- A1 Pull-up 8-10
+- A2 Dip 8-10
+
+Circuit 3 rounds rest 60s
+- 10 Push-up
+- 15 Air Squat
+- 30s Plank
+
+Complex 5 sets @ 2x24kg rest 90s
+- 2 Double Clean
+- 1 Double Press
+- 3 Double Front Squat
+
+EMOM 12                         every minute on the minute, 12 minutes
+- 12 KB Swing @ 24kg            (no prefix = every minute)
+E2MOM 20                        every 2 minutes for 20 minutes
+EMOM 12
+- odd: 12 Swing @ 24kg          alternate by minute
+- even: 6/side Goblet Lunge @ 16kg
+EMOM 15
+- 1: 10 Burpee                  rotate: minute 1, 2, 3, then repeat
+- 2: 15 Wall Ball @ 20 lb
+- 3: 12 Cal Row
+
+AMRAP 20:00
+- 5 Pull-up
+- 10 Push-up
+- 15 Air Squat
+
+For time cap 20:00 @ vest 20 lb
+- 1 mi Run
+- 100 Pull-up
+- 1 mi Run
+
+5 rounds for time
+- 400m Run
+- 15 Overhead Squat @ 95 lb
+
+21-15-9 for time cap 10:00
+- Thruster @ 95/65 lb
+- Pull-up
+scaled: Thruster @ 65 lb, Ring Row
+
+Death by Burpee                 1 rep the first minute, 2 the second... until you can't
+
+Tabata                          8 rounds of 20s on / 10s off
+- Air Bike
+
+Intervals 6 x 30s on / 90s off
+- Row @ damper 6
+Intervals 10 x 40s on / 20s off
+- odd: KB Swing @ 24kg
+- even: Burpee
+Intervals 8 x 400m on / 90s off      (distance or calorie work is ended with a "Lap done" button)
+- Run @ 5K pace
+Intervals 6 x 15 cal on / 1:00 off
+- Echo Bike
+Pyramid 1:00 / 2:00 / 3:00 / 2:00 / 1:00 on, rest = work
+- Bike @ 250 W
+
+Steady 45:00 zone 2
+- Bike
+Steady 5 km
+- Run @ easy
+Row 500m easy                   a single steady piece can also be one line
+
+Test 5:00                       finish the work inside the time
+- 100 One-Arm Swing @ 24kg
+
+------------------------------------------------------------
+OPTIONS (put under any card)
+------------------------------------------------------------
+rest: 2:00        tempo: 3-1-1-0        score: rounds+reps        scaled: ...
+- alt: Knee Push-up | Push-up | Diamond Push-up     (progression options, under a movement, indented)
+
+------------------------------------------------------------
+FULL EXAMPLE
+------------------------------------------------------------
+# Upper Strength A
+tags: barbell, upper
+
+## Warm-up
+Row 500m easy
+Circuit 2 rounds
+- 10 Band Pull-apart
+- 10 Push-up
+
+## Strength
+Bench Press
+- warmup 5 @ 45%
+- 5 @ 75% TM
+- 3 @ 85% TM
+- 1+ @ 95% TM
+rest: 3:00
+> Last set: stop one rep short of failure.
+
+Superset x3 rest 90s
+- A1 Weighted Pull-up 5 @ BW+25 lb
+- A2 DB Row 10/side @ 70 lb
+
+## Conditioning
+EMOM 10
+- odd: 12 KB Swing @ 24kg
+- even: 10 Burpee
