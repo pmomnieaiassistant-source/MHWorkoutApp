@@ -87,6 +87,9 @@ Straight sets, EMOM, custom work/rest intervals, steady duration/distance. Likel
 
 ## Import from LLM (session syntax)
 
+Full draft spec: `docs/session-format.md` (formats, syntax, examples, Sheet layout, builder approach).
+
+
 - The app provides a **downloadable syntax instructions file** describing the exact session format, with examples.
 - A user gives that file to any LLM (ChatGPT, Claude, etc.) along with their workout in any form; the LLM returns text in the app's syntax.
 - In Program → Create session → **Import from LLM**, the user pastes that text into a text box.
