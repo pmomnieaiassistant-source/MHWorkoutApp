@@ -429,7 +429,7 @@ const whoopFor = w => w && w.whoopId ? byId('WhoopWorkouts', w.whoopId) : null;
 function vFeed() {
   const T = today();
   const linked = new Set(S.Workouts.map(w => w.whoopId).filter(Boolean));
-  let html = '', shown = 0;
+  let html = todayCard(), shown = 0;
   for (let i = 0; i < FEEDN; i++) {
     const d = addDays(T, -i), wd = byId('WhoopDays', d);
     const wos = S.Workouts.filter(w => w.date === d).sort((a, b) => String(b.start || '').localeCompare(String(a.start || '')));
@@ -485,6 +485,33 @@ A.dayOpen = d => openOv({
       ${!byId('WhoopDays', d) ? '<div class="empty">No Whoop data for this day.</div>' : ''}</div>`;
   }
 });
+
+/** Top of the Feed: the day at a glance. Week = the Planner week (Monday to Sunday). */
+function todayCard() {
+  const T = today(), mon = mondayOf(T), days = [0, 1, 2, 3, 4, 5, 6].map(i => addDays(mon, i));
+  const w = weekRow(mon), blk = w && byId('Blocks', w.blockId);
+  const todays = planFor(T).filter(x => x !== 'rest' && byId('Sessions', x)), rest = planFor(T).includes('rest');
+  let planned = 0, done = 0;
+  days.forEach(d => planFor(d).forEach(x => { if (x === 'rest' || !byId('Sessions', x)) return; planned++; if (dayStatus(d, x) === 'done') done++; }));
+  const inWeek = d => d >= mon && d <= T;
+  const linked = new Set(S.Workouts.map(x => x.whoopId).filter(Boolean));
+  const woCount = S.Workouts.filter(x => x.status === 'done' && inWeek(x.date)).length + S.WhoopWorkouts.filter(x => inWeek(x.date) && !linked.has(x.id)).length;
+  const strains = S.WhoopDays.filter(x => inWeek(x.id) && x.strain != null).map(x => +x.strain);
+  const strain = strains.reduce((a, b) => a + b, 0);
+  const sesLine = todays.length ? todays.map(id => { const s = byId('Sessions', id), st = dayStatus(T, id);
+      return `<div class="row tap" data-a="todayGo" data-v="${id}" style="margin-top:8px"><div class="grow"><b style="font-size:19px">${esc(s.name)}</b><div class="small muted">${estMin(parsed(s))} min${st === 'done' ? ' · done' : st === 'skipped' ? ' · missed' : ''}</div></div>
+        ${st === 'done' ? `<span style="color:var(--green)">${ic('check', 22, 3)}</span>` : `<span class="chip on">${ic('play', 13)}Start</span>`}</div>`; }).join('')
+    : `<div style="margin-top:8px"><b style="font-size:19px">${rest ? 'Rest day' : 'Nothing planned'}</b><div class="small muted">${rest ? 'Recover well.' : '<a data-a="tabPlanner">Plan your week</a>'}</div></div>`;
+  return `<div class="card k-today"><div class="fmt">Today</div>
+    <div class="row" style="margin-top:4px"><h3 class="grow" style="font-size:22px">${esc(fmtLong(T))}</h3>${blk ? `<span class="chip lime">${esc(blk.name)}</span>` : ''}</div>
+    <div class="tiny muted" style="margin-top:14px;font-weight:700">Today's session</div>${sesLine}
+    <div class="kv" style="grid-template-columns:repeat(3,1fr)">
+      <div><span>Sessions</span><b>${done}<span class="muted" style="font-size:15px">/${planned}</span></b><div class="small muted">this week</div></div>
+      <div><span>Workouts</span><b>${woCount}</b><div class="small muted">this week</div></div>
+      <div><span>Strain</span><b>${strains.length ? strain.toFixed(1) : '–'}</b><div class="small muted">${strains.length ? 'avg ' + (strain / strains.length).toFixed(1) + '/day' : 'needs Whoop'}</div></div>
+    </div>${planned ? `<div class="progress"><div style="width:${pct(done, planned)}%"></div></div>` : ''}</div>`;
+}
+A.todayGo = id => { TAB = 'workout'; LS.set('tab', TAB); if (!ACT && dayStatus(today(), id) !== 'done') startWorkout({ sessionId: id }); else { render(); window.scrollTo(0, 0); } };
 
 const wakeAt = (d, wd) => Date.parse((wd.sleep && wd.sleep.end) || wd.cycleStart || '') || pd(d).getTime() + 6 * 3600000;
 function dayCard(d, wd) {

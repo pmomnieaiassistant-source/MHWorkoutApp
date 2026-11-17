@@ -187,6 +187,8 @@ body.resting .fbottom { bottom: 92px; } body.resting .fbody { padding-bottom: ca
 .card.k-day, .card.k-wo, .card.k-miss { overflow: hidden; }
 .card.k-day:before, .card.k-wo:before, .card.k-miss:before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
 .card.k-day { background: linear-gradient(135deg, rgba(90, 176, 255, .13), rgba(90, 176, 255, .03) 60%), var(--card); }
+.card.k-today { background: radial-gradient(120% 140% at 100% 0%, rgba(198, 244, 50, .22), rgba(198, 244, 50, 0) 55%), linear-gradient(160deg, #1B2027, #12151A); border: 1px solid rgba(198, 244, 50, .18); margin-top: 6px; }
+.card.k-today .kv > div { background: rgba(255, 255, 255, .05); }
 .card.k-day:before { background: var(--blue); } .card.k-day .fmt { color: var(--blue); }
 .card.k-wo { background: linear-gradient(135deg, rgba(198, 244, 50, .10), rgba(198, 244, 50, .02) 60%), var(--card); }
 .card.k-wo:before { background: var(--lime); }
