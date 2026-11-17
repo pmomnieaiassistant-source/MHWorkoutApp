@@ -70,7 +70,7 @@ Runs today's scheduled session (user can also pick a different session).
 - **Timed / intervals (EMOM, work/rest splits, timed runs):**
   - Full-screen view with the current minute ("Minute 4 of 12") and the exercise name in large bold text, plus reps/weight and a big countdown.
   - Supports detailed custom intervals, e.g. 30s work / 90s rest, alternating exercises on odd/even minutes.
-  - **Color flashes** at each transition so the user knows when to switch, plus sound and haptic cues.
+  - **Color flashes** at each transition so the user knows when to switch. Sound cues are a later build (see Decisions log); iPhone web apps cannot vibrate.
   - Keep the screen awake during timed blocks (iPhone suspends web apps when the screen locks; this needs careful handling).
 - **Steady cardio:** duration or distance, with a timer.
 
@@ -83,7 +83,7 @@ Full list in `docs/session-format.md` (straight sets, supersets, circuits, compl
 - **Connect Whoop** button.
 - Personal tracking over time: weight, height, resting heart rate, max heart rate, plus custom user-defined measurements.
 - Whoop can auto-fill height, weight, max HR (body measurements) and resting HR (recovery).
-- Trend charts per measurement (to confirm; at minimum a log of entries).
+- Start simple: a log of entries per measurement (charts can come later).
 
 ## Import from LLM (session syntax)
 
@@ -123,10 +123,10 @@ Full draft spec: `docs/session-format.md` (formats, syntax, examples, Sheet layo
 - **Program:** multi-week cycles supported. See `docs/session-format.md` section 7 for rounding, units and exercise names.
 - **Timed screen, phase 1:** no audio cues, no push. The clock is computed from timestamps so it is correct after the screen locks or the app is reopened; screen kept awake during timed blocks. Locked-screen audio cues (pre-rendered audio track) and music handling are a later build.
 - **Run / erg intervals:** in scope for the timed screen (work by time, distance or calories; targets for pace, split, watts, zone). Distance/calorie reps use a "Lap done" button.
+- **Home tab tracking:** keep it simple to start, a log of entries per measurement; charts later.
 - **Lifter friend:** no need to wait; he will test the app and changes come later.
 
 ## Open questions
 
 - Should a proposed session be suggested (accept/swap) or simply assigned for the day.
-- Home tab: charts vs. simple log to start.
 - Assumed unless Paul says otherwise: a new Sheet and Apps Script project (separate from the family app) deployed from Paul's Google account; personal-link sign-in (`?u=<key>`, passcode per user in Script Properties) as in the family app.
