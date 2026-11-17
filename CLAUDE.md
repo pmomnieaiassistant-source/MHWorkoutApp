@@ -101,7 +101,7 @@ Full list in `docs/session-format.md` (straight sets, supersets, circuits, compl
 
 - **Connect Whoop** button.
 - Personal tracking over time: weight, height, resting heart rate, max heart rate, plus custom user-defined measurements.
-- Whoop can auto-fill height, weight, max HR (body measurements) and resting HR (recovery).
+- Whoop can auto-fill height, weight, max HR (body measurements) and resting HR (recovery). Each is a switch under Home → Whoop → "Update measurements from Whoop"; **all off by default**.
 - Start simple: a log of entries per measurement (charts can come later).
 
 ## Import from LLM (session syntax)

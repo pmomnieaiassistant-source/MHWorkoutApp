@@ -689,7 +689,8 @@ function vHome() {
   <div class="sec">Whoop</div>
   <div class="card">${!serverMode() ? `<div class="muted small">Connecting Whoop needs the back end. Follow backend/SETUP.md, then open the app from your personal link.</div><button class="btn block gray" style="margin-top:12px" disabled>Connect Whoop</button>`
     : wd.connected ? `<div class="row"><div class="rec" style="background:rgba(198,244,50,.12);color:var(--lime);width:44px;height:44px">${ic('heart', 22)}</div><div class="grow"><b>Whoop connected</b><div class="small muted">${wd.lastSync ? 'Last sync ' + new Date(wd.lastSync).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Not synced yet'}</div></div></div>
-      <button class="btn block" style="margin-top:14px" data-a="whoopSyncNow">${ic('sync', 19)}Sync Whoop</button><button class="btn ghost block sm" style="margin-top:6px" data-a="whoopDisconnect">Disconnect</button>`
+      <button class="btn block" style="margin-top:14px" data-a="whoopSyncNow">${ic('sync', 19)}Sync Whoop</button>
+      <button class="menu-item" style="margin-top:8px;border-top:1px solid var(--line)" data-a="whoopFillOpen"><span class="grow">Update measurements from Whoop<div class="small muted">${(() => { const on = WFILL.filter(([k]) => wfill()[k]).map(([k]) => k); return on.length ? on.join(', ') : 'Off'; })()}</div></span>${ic('chev', 18)}</button><button class="btn ghost block sm" style="margin-top:6px" data-a="whoopDisconnect">Disconnect</button>`
     : `<div class="muted small">Bring in sleep, recovery, strain and workouts. You'll sign in to Whoop and come back here.</div><button class="btn block" style="margin-top:14px" data-a="whoopConnect">${ic('heart', 19)}Connect Whoop</button>`}</div>
 
   <div class="sec"><span>Measurements</span><a class="small" data-a="mTypeAdd">+ Type</a></div>
@@ -777,15 +778,26 @@ async function whoopSync(quiet) {
   } catch (e) { if (!quiet) toast(e.message); }
 }
 /** Fill measurements from Whoop: resting HR per day, and body measurements when they change. */
+// Which measurements Whoop fills in on each sync. All off until the user turns them on.
+const WFILL = [['Weight', 'Weight'], ['Height', 'Height'], ['Resting HR', 'Resting heart rate (one entry per day)'], ['Max HR', 'Max heart rate']];
+const wfill = () => Object.assign({ Weight: false, Height: false, 'Resting HR': false, 'Max HR': false }, setting('whoopFill', {}) || {});
+A.whoopFillOpen = () => openOv({
+  live: true,
+  render: () => { const f = wfill(); return `<h2>Update from Whoop</h2><div class="small muted">Choose which measurements get a new entry from Whoop each time it syncs. Entries you typed yourself are never changed.</div>
+    <div style="margin-top:8px">${WFILL.map(([k, l]) => `<button class="menu-item" data-a="whoopFillToggle" data-v="${esc(k)}"><span class="grow">${esc(l)}</span>${toggleHtml(f[k])}</button>`).join('')}</div>`; }
+});
+A.whoopFillToggle = k => { const f = wfill(); f[k] = !f[k]; setSetting('whoopFill', f).then(() => { if (f[k]) whoopMeasurements(); }); };
+const toggleHtml = on => `<span style="width:46px;height:28px;border-radius:14px;background:${on ? 'var(--lime)' : 'var(--card3)'};position:relative;flex:none;transition:.2s"><span style="position:absolute;top:3px;left:${on ? 21 : 3}px;width:22px;height:22px;border-radius:50%;background:${on ? 'var(--lime-ink)' : 'var(--mute)'};transition:.2s"></span></span>`;
+
 function whoopMeasurements() {
-  const ops = [];
-  S.WhoopDays.forEach(d => { if (d.rhr && !byId('Measurements', 'whoop-rhr-' + d.id)) ops.push({ t: 'Measurements', row: { id: 'whoop-rhr-' + d.id, date: d.id, type: 'Resting HR', value: Math.round(d.rhr), unit: 'bpm', src: 'whoop' } }); });
+  const ops = [], f = wfill();
+  if (f['Resting HR']) S.WhoopDays.forEach(d => { if (d.rhr && !byId('Measurements', 'whoop-rhr-' + d.id)) ops.push({ t: 'Measurements', row: { id: 'whoop-rhr-' + d.id, date: d.id, type: 'Resting HR', value: Math.round(d.rhr), unit: 'bpm', src: 'whoop' } }); });
   const b = setting('whoopBody', null);
   if (b) {
     const kg = UNIT() === 'kg';
     const vals = [['Weight', b.weight ? (kg ? b.weight : b.weight * 2.20462) : null, UNIT()], ['Height', b.height ? (kg ? b.height * 100 : b.height * 39.3701) : null, kg ? 'cm' : 'in'], ['Max HR', b.maxHr, 'bpm']];
     vals.forEach(([type, v, unit]) => {
-      if (!v) return; v = Math.round(v * 10) / 10;
+      if (!v || !f[type]) return; v = Math.round(v * 10) / 10;
       const last = latestM(type);
       if (!last || Math.abs(last.value - v) >= 0.5) ops.push({ t: 'Measurements', row: { id: uid(), date: today(), type, value: v, unit, src: 'whoop' } });
     });
