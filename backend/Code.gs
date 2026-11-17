@@ -49,7 +49,7 @@ function doGet(e) {
 
 function route(user, b) {
   switch (b.action) {
-    case 'load': return { tables: loadAll(user), whoop: whoopStatus(user) };
+    case 'load': return { tables: loadAll(user), shared: loadShared(user), whoop: whoopStatus(user) };
     case 'write': write(user, b.ops || []); return {};
     case 'whoop_start': return { url: whoopAuthUrl(user) };
     case 'whoop_sync': return whoopSync(user, b.days);
@@ -79,6 +79,20 @@ function loadAll(user) {
     out[t] = rowsOf(t).vals.filter(r => r[0] === user).map(r => { try { return JSON.parse(r[4]); } catch (e) { return null; } }).filter(Boolean);
   });
   return out;
+}
+
+/** Sessions and blocks other people marked public. A public block carries copies of its sessions so it can be added whole. */
+function loadShared(user) {
+  const parse = r => { try { return JSON.parse(r[4]); } catch (e) { return null; } };
+  const ses = rowsOf('Sessions').vals.filter(r => r[0] !== user).map(r => ({ owner: r[0], d: parse(r) })).filter(x => x.d);
+  const byKey = {}; ses.forEach(x => byKey[x.owner + '|' + x.d.id] = x.d);
+  const pick = (d, owner) => ({ id: d.id, name: d.name, tags: d.tags || [], text: d.text || '', owner });
+  const Sessions = ses.filter(x => x.d.public).map(x => pick(x.d, x.owner));
+  const Blocks = rowsOf('Blocks').vals.filter(r => r[0] !== user).map(r => ({ owner: r[0], d: parse(r) })).filter(x => x.d && x.d.public).map(x => {
+    const ids = {}; (x.d.days || []).forEach(day => day.forEach(id => { if (id !== 'rest') ids[id] = 1; }));
+    return { id: x.d.id, name: x.d.name, days: x.d.days, owner: x.owner, sessions: Object.keys(ids).map(id => byKey[x.owner + '|' + id]).filter(Boolean).map(d => pick(d, x.owner)) };
+  });
+  return { Sessions, Blocks };
 }
 
 /** ops: [{t, row}] to insert/replace by id, [{t, del: id}] to delete. Rows are always whole. */

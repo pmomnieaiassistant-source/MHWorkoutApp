@@ -20,22 +20,28 @@ function vSessions() {
     last: (a, b) => (lastDone(a.id) || '0').localeCompare(lastDone(b.id) || '0')
   };
   list.sort(sorters[LIBOPT.sort] || sorters.recent);
+  const mine = new Set(S.Sessions.map(s => s.fromShared).filter(Boolean));
+  const shared = LIBOPT.shared !== false ? SHARED.Sessions.filter(s => !mine.has(s.owner + '|' + s.id) && (!LIBOPT.tag || (s.tags || []).includes(LIBOPT.tag))) : [];
   return `<div class="btns" style="margin-top:12px"><button class="btn sm" data-a="sesNew">${ic('plus', 18)}New session</button><button class="btn gray sm" data-a="sesImport">Import from LLM</button></div>
     ${LIBOPT.tag ? `<div class="small muted" style="margin-top:12px">Tag: <b style="color:var(--text)">${esc(LIBOPT.tag)}</b> · <a data-a="libTag" data-v="">Show all</a></div>` : ''}
     ${list.map(s => {
       const p = parsed(s), ld = lastDone(s.id), n = allCards(p).length;
-      return `<div class="card tap" data-a="sesOpen" data-v="${s.id}"><div class="row"><h3 class="grow ell">${esc(s.name)}</h3>${s.rating ? stars(s.rating) : ''}</div>
+      return `<div class="card tap" data-a="sesOpen" data-v="${s.id}"><div class="row"><h3 class="grow ell">${esc(s.name)}</h3>${s.public ? '<span class="chip blue" style="font-size:11px">Public</span>' : ''}${s.rating ? stars(s.rating) : ''}</div>
         <div class="small muted" style="margin-top:4px">${estMin(p)} min · ${n} card${n === 1 ? '' : 's'} · ${ld ? 'Last done ' + fmtMD(ld) : 'Not done yet'}</div>
         ${(s.tags || []).length ? `<div class="chips" style="margin-top:10px">${s.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>` : ''}</div>`;
-    }).join('') || `<div class="empty"><b>No sessions yet</b>Create one, or import one written by an LLM.</div>`}`;
+    }).join('') || `<div class="empty"><b>No sessions yet</b>Create one, or import one written by an LLM.</div>`}
+    ${shared.length ? `<div class="sec">Shared by others</div><div class="card" style="padding:4px 16px">${shared.map(s => sharedRow(s, 'sesAdopt')).join('')}</div>` : ''}`;
 }
 A.libMenu = () => {
   const tags = [...new Set(S.Sessions.flatMap(s => s.tags || []))].sort();
   menu('Sessions', [{ html: '<div class="lbl" style="margin-top:0">Sort by</div>' },
     ...[['recent', 'Recently used'], ['name', 'Name'], ['rating', 'Rating'], ['last', 'Longest since done']].map(([k, l]) => ({ label: l, a: 'libSort', v: k, on: LIBOPT.sort === k })),
+    { html: '<div class="lbl">Show</div>' }, { label: 'Public sessions from others', a: 'libShared', on: LIBOPT.shared !== false },
     tags.length ? { html: '<div class="lbl">Tag</div>' } : null,
     ...tags.map(t => ({ label: t, a: 'libTag', v: t, on: LIBOPT.tag === t }))]);
 };
+A.sesAdopt = async v => { const id = await adoptSession(v.slice(7)); if (id) A.sesOpen(id); };
+A.libShared = () => { LIBOPT.shared = LIBOPT.shared === false; LS.set('libopt', LIBOPT); render(); };
 A.libSort = k => { LIBOPT.sort = k; LS.set('libopt', LIBOPT); render(); };
 A.libTag = t => { LIBOPT.tag = LIBOPT.tag === t ? '' : t; LS.set('libopt', LIBOPT); render(); };
 
@@ -58,6 +64,7 @@ A.sesOpen = id => {
       <div class="fbody">
         <h1 style="margin:4px 0 6px;font-size:30px;letter-spacing:-.02em">${esc(s.name)}</h1>
         <div class="row">${stars(s.rating, 'sesRate')}<span class="small muted">${estMin(p)} min · ${ld ? 'Last done ' + fmtMD(ld) : 'Not done yet'}</span></div>
+        ${s.public || s.from ? `<div class="chips" style="margin-top:10px">${s.public ? '<span class="chip blue">Public</span>' : ''}${s.from ? `<span class="chip">From ${esc(s.from)}</span>` : ''}</div>` : ''}
         ${(s.tags || []).length ? `<div class="chips" style="margin-top:12px">${s.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>` : ''}
         ${sessionBody(p)}
         <div class="sec">Comments</div>
@@ -101,7 +108,7 @@ A.sesNew = () => sesEditor(null);
 A.sesEdit = id => sesEditor(id);
 function sesEditor(id) {
   const s = id ? byId('Sessions', id) : null;
-  const st = { name: s ? s.name : '', tags: s ? (s.tags || []).join(', ') : '', text: s ? s.text : '## Warm-up\n\n## Main\n', view: 'text' };
+  const st = { name: s ? s.name : '', tags: s ? (s.tags || []).join(', ') : '', text: s ? s.text : '## Warm-up\n\n## Main\n', view: 'text', pub: !!(s && s.public) };
   const o = openOv({
     full: true,
     render: () => {
@@ -110,6 +117,7 @@ function sesEditor(id) {
       <div class="fbody">
         <input id="seName" placeholder="Session name" value="${esc(st.name)}" style="font-size:20px;font-weight:700">
         <input id="seTags" placeholder="Tags, comma separated (optional)" value="${esc(st.tags)}" style="margin-top:8px">
+        ${pubToggle(st.pub, 'sePub', 'session')}
         <div class="seg" style="margin-top:12px"><button class="${st.view === 'text' ? 'on' : ''}" data-a="seView" data-v="text">Write</button><button class="${st.view === 'preview' ? 'on' : ''}" data-a="seView" data-v="preview">Preview${r.warnings.length ? ` <span class="warn">(${r.warnings.length})</span>` : ''}</button></div>
         ${st.view === 'text' ? `<div class="tool">${SNIPS.map(([l], i) => `<button class="chip" data-a="seSnip" data-v="${i}">${ic('plus', 13)}${l}</button>`).join('')}</div>
           <textarea id="seText" class="code" spellcheck="false" autocapitalize="off" autocomplete="off">${esc(st.text)}</textarea>
@@ -126,6 +134,10 @@ function sesEditor(id) {
   o.st = st;
 }
 A.seView = (v, el) => { const o = ovOf(el); o.st.view = v; o.redraw(); };
+A.sePub = (v, el) => { const o = ovOf(el); o.st.pub = !o.st.pub; o.redraw(); };
+const pubToggle = (on, a, what) => `<button class="row" data-a="${a}" style="width:100%;margin-top:10px;background:var(--card);border-radius:12px;padding:12px 14px;text-align:left">
+  <div class="grow"><b>Make public</b><div class="small muted">Other MH Lift users can add a copy of this ${what}. Your name is shown with it.</div></div>
+  <span style="width:46px;height:28px;border-radius:14px;background:${on ? 'var(--lime)' : 'var(--card3)'};position:relative;flex:none;transition:.2s"><span style="position:absolute;top:3px;left:${on ? 21 : 3}px;width:22px;height:22px;border-radius:50%;background:${on ? 'var(--lime-ink)' : 'var(--mute)'};transition:.2s"></span></span></button>`;
 A.seSnip = (i, el) => {
   const o = ovOf(el), x = o.box.querySelector('#seText'), snip = SNIPS[+i][1];
   const a = o.st.pos != null ? o.st.pos : x.value.length, b = o.st.pos != null ? o.st.posEnd : x.value.length;
@@ -139,7 +151,7 @@ A.sesSave = (id, el) => {
   if (!name) return toast('Give the session a name');
   if (r.sessions.length > 1) return toast('This text has several sessions. Use Import instead.');
   const old = id ? byId('Sessions', id) : null;
-  write({ t: 'Sessions', row: Object.assign({}, old || { id: uid(), created: Date.now(), rating: 0, comments: [] }, { name, tags: st.tags.split(',').map(x => x.trim()).filter(Boolean), text: st.text }) });
+  write({ t: 'Sessions', row: Object.assign({}, old || { id: uid(), created: Date.now(), rating: 0, comments: [] }, { name, tags: st.tags.split(',').map(x => x.trim()).filter(Boolean), text: st.text, public: !!st.pub }) });
   closeOv(o); toast('Saved');
 };
 A.syntaxHelp = () => openOv({ render: () => `<h2>Session syntax</h2><div class="export" style="font-size:12.5px">${esc(SYNTAX_SHORT)}</div><a class="btn gray block" style="margin-top:14px" href="syntax.txt" target="_blank">Full guide</a>` });
@@ -219,17 +231,21 @@ function vBlocks() {
       return `<div class="card tap" data-a="blockOpen" data-v="${b.id}"><div class="row"><h3 class="grow">${esc(b.name)}</h3><span class="small muted">${n} session${n === 1 ? '' : 's'}</span></div>
         <div class="blockdays">${b.days.map((d, i) => `<div class="${d.some(x => x !== 'rest') ? 'has' : ''}">${DN[i][0]}${d.filter(x => x !== 'rest').length > 1 ? '·' + d.filter(x => x !== 'rest').length : ''}</div>`).join('')}</div>
         ${wk ? `<div class="small muted" style="margin-top:10px">Used by ${wk} planner week${wk === 1 ? '' : 's'}</div>` : ''}</div>`;
-    }).join('') || `<div class="empty"><b>No blocks yet</b>Build a week here, or fill a week in the Planner and save it as a block.</div>`}`;
+    }).join('') || `<div class="empty"><b>No blocks yet</b>Build a week here, or fill a week in the Planner and save it as a block.</div>`}
+    ${sharedBlocks().length ? `<div class="sec">Shared by others</div><div class="card" style="padding:4px 16px">${sharedBlocks().map(b => sharedRow(b, 'blockAdopt')).join('')}</div>` : ''}`;
 }
 A.blockNew = () => blockEditor(null);
+A.blockAdopt = async v => { const id = await adoptBlock(v.slice(7)); if (id) blockEditor(id); };
+A.bkPub = (v, el) => { const o = ovOf(el); o.st.pub = !o.st.pub; o.redraw(); };
 A.blockOpen = id => blockEditor(id);
 function blockEditor(id) {
   const b = id ? byId('Blocks', id) : null;
-  const st = { name: b ? b.name : 'Block ' + (S.Blocks.length + 1), days: b ? b.days.map(d => d.slice()) : [[], [], [], [], [], [], []] };
+  const st = { name: b ? b.name : 'Block ' + (S.Blocks.length + 1), days: b ? b.days.map(d => d.slice()) : [[], [], [], [], [], [], []], pub: !!(b && b.public) };
   const o = openOv({
     full: true,
     render: () => `<div class="fbar"><button class="btn ghost sm" data-a="closeOv">Cancel</button><div class="t">${id ? 'Edit block' : 'New block'}</div>${id ? `<button class="ibtn" data-a="blockMenu" data-v="${id}">${ic('menu')}</button>` : ''}<button class="btn sm" data-a="blockSave" data-v="${id || ''}">Save</button></div>
       <div class="fbody"><input id="bkName" value="${esc(st.name)}" placeholder="Block name" style="font-size:20px;font-weight:700">
+      ${pubToggle(st.pub, 'bkPub', 'block (and the sessions in it)')}
       ${id && weeksUsing(id) ? `<div class="small muted" style="margin-top:8px">Saving changes ${weeksUsing(id)} linked planner week${weeksUsing(id) === 1 ? '' : 's'} from today on.</div>` : ''}
       ${st.days.map((d, i) => `<div class="day"><div class="dh"><b>${DFULL[i]}</b><button class="chip" data-a="blockAdd" data-v="${i}">${ic('plus', 14)}Add</button></div>
         ${d.map((x, j) => planItem(x, null, `data-a="blockItem" data-v="${i}|${j}"`)).join('') || '<div class="small dim" style="padding:0 2px 6px">Nothing</div>'}</div>`).join('')}</div>`,
@@ -248,7 +264,7 @@ A.blockSave = async (id, el) => {
   const o = ovOf(el), st = o.st; if (!st.name.trim()) return toast('Name the block');
   const ops = id ? snapshotPastOps(id) : [];
   const old = id ? byId('Blocks', id) : null;
-  ops.push({ t: 'Blocks', row: Object.assign({}, old || { id: uid() }, { name: st.name.trim(), days: st.days }) });
+  ops.push({ t: 'Blocks', row: Object.assign({}, old || { id: uid() }, { name: st.name.trim(), days: st.days, public: !!st.pub }) });
   await write(ops); closeOv(o); toast('Block saved');
 };
 A.blockMenu = id => menu('', [{ label: 'Duplicate', a: 'blockDup', v: id }, { label: 'Delete', a: 'blockDel', v: id, danger: true }]);
@@ -320,11 +336,15 @@ A.dayMoveTo = v => {
   const [d, j, to] = v.split('|'), from = planFor(d), x = from.splice(+j, 1)[0];
   editDays({ [d]: from, [to]: planFor(to).filter(y => y !== 'rest' || x === 'rest').concat([x]) });
 };
+const sharedBlocks = () => { const mine = new Set(S.Blocks.map(b => b.fromShared).filter(Boolean)); return SHARED.Blocks.filter(b => !mine.has(b.owner + '|' + b.id)); };
 A.fillWeek = () => {
-  if (!S.Blocks.length) return toast('Make a block first (Program → Blocks)');
-  menu('Fill this week with', S.Blocks.map(b => ({ label: b.name, a: 'fillWeekGo', v: b.id })));
+  const sh = sharedBlocks();
+  if (!S.Blocks.length && !sh.length) return toast('Make a block first (Program → Blocks)');
+  menu('Fill this week with', S.Blocks.map(b => ({ label: b.name, a: 'fillWeekGo', v: b.id }))
+    .concat(sh.length ? [{ html: '<div class="lbl">Shared by others</div>' }] : [], sh.map(b => ({ html: sharedRow(b, 'fillWeekGo', true) }))));
 };
 A.fillWeekGo = async id => {
+  if (/^shared:/.test(id)) { id = await adoptBlock(id.slice(7)); if (!id) return; }
   await write(fillWeekOps(PW, id));
   const b = byId('Blocks', id);
   ask({ title: `Week filled with ${b.name}`, body: `This week will now change whenever ${esc(b.name)} changes, unless you unlink it.` });
@@ -347,14 +367,14 @@ A.saveAsBlock = async () => {
   ask({ title: `Saved as ${r.text}`, body: `This week is now linked to ${esc(r.text)} and will change whenever it changes, unless you unlink it.` });
 };
 A.fillMany = () => {
-  if (!S.Blocks.length) return toast('Make a block first (Program → Blocks)');
+  if (!S.Blocks.length && !sharedBlocks().length) return toast('Make a block first (Program → Blocks)');
   const st = { seq: [], start: PW, repeat: 1 };
   const weeks = []; for (let i = -1; i < 26; i++) weeks.push(addDays(PW, i * 7));
   const o = openOv({
     render: () => {
       const n = st.seq.length * st.repeat, end = n ? addDays(st.start, (n - 1) * 7 + 6) : null;
       return `<h2>Fill several weeks</h2><div class="small muted">Tap blocks in the order you want them. Each week stays linked to its block.</div>
-        <div class="lbl">Blocks</div><div class="chips wrap" style="flex-wrap:wrap">${S.Blocks.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).map(b => `<button class="chip" data-a="fmAdd" data-v="${b.id}">${ic('plus', 13)}${esc(b.name)}</button>`).join('')}</div>
+        <div class="lbl">Blocks</div><div class="chips wrap" style="flex-wrap:wrap">${S.Blocks.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).map(b => `<button class="chip" data-a="fmAdd" data-v="${b.id}">${ic('plus', 13)}${esc(b.name)}</button>`).join('')}${sharedBlocks().map(b => `<button class="chip blue" data-a="fmAdd" data-v="shared:${esc(b.id)}">${ic('plus', 13)}${esc(b.name)} · ${esc(b.owner)}</button>`).join('')}</div>
         <div class="lbl">Order</div><div class="card" style="margin:0;padding:12px 14px">${st.seq.length ? st.seq.map((id, i) => `<div class="small">Week ${i + 1}: <b>${esc((byId('Blocks', id) || {}).name || '')}</b></div>`).join('') + `<a class="small" data-a="fmClear">Clear</a>` : '<span class="small muted">Nothing yet</span>'}</div>
         <div class="row"><div class="grow"><div class="lbl">Starting</div><select id="fmStart">${weeks.map(w => `<option value="${w}" ${w === st.start ? 'selected' : ''}>Week of ${fmtMD(w)}</option>`).join('')}</select></div>
           <div style="width:110px"><div class="lbl">Repeat</div><select id="fmRep">${[1, 2, 3, 4, 5, 6, 8, 10, 12].map(n => `<option ${n === st.repeat ? 'selected' : ''}>${n}</option>`).join('')}</select></div></div>
@@ -365,7 +385,7 @@ A.fillMany = () => {
   });
   o.st = st;
 };
-A.fmAdd = (id, el) => { const o = ovOf(el); o.st.seq.push(id); o.redraw(); };
+A.fmAdd = async (id, el) => { const o = ovOf(el); if (/^shared:/.test(id)) { id = await adoptBlock(id.slice(7)); if (!id) return; } o.st.seq.push(id); o.redraw(); };
 A.fmClear = (v, el) => { const o = ovOf(el); o.st.seq = []; o.redraw(); };
 A.fmGo = async (v, el) => {
   const o = ovOf(el), st = o.st, ops = [];
