@@ -61,7 +61,10 @@ A private, scrolling timeline.
 
 ## Workout tab
 
-Runs today's scheduled session (user can also pick a different session).
+Runs today's planned session(s) from the Planner (user can also pick a different session).
+
+- **+ button (bottom corner): enter a workout by hand** after the fact (planned session, library session, or blank). See `docs/planner.md`.
+- **Missed sessions:** on opening the app, a past planned session with nothing recorded triggers "Did you miss…?" Yes = mark skipped; No = open manual entry pre-filled with the plan.
 
 - The session is organized into **phases** (e.g. Warm-up, Strength, Conditioning), each containing **cards** (one per step).
 - **Card interaction:**
@@ -134,5 +137,4 @@ Full draft spec: `docs/session-format.md` (formats, syntax, examples, Sheet layo
 
 ## Open questions
 
-- Should a proposed session be suggested (accept/swap) or simply assigned for the day.
 - Assumed unless Paul says otherwise: a new Sheet and Apps Script project (separate from the family app) deployed from Paul's Google account; personal-link sign-in (`?u=<key>`, passcode per user in Script Properties) as in the family app.

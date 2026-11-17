@@ -1,6 +1,6 @@
 # Program tab: Sessions, Blocks, Planner (draft v0.1)
 
-Status: **draft for review.** Open questions at the end.
+Status: **draft v0.2.** Questions answered by Paul (see Decisions).
 
 ## The three sections
 
@@ -15,8 +15,8 @@ Status: **draft for review.** Open questions at the end.
 - Week bar at the top: `‹  This week · Nov 16–22  ›`. Swipe left/right (or tap the arrows) to move weeks. A tag under it shows how the week is filled, e.g. **Block 2 · linked**, **Block 2 · 1 change**, or **Custom**.
 - Seven day rows, Monday first. Each shows its session cards (name, est. time, done/skipped status for past days) and a **+ Add** chip. Rest days show "Rest".
 - Week menu (⋯ on the week bar):
-  - **Fill with block…** → pick a block → the week takes that block's sessions and stays linked to it.
-  - **Fill weeks with blocks…** → pick blocks in order (e.g. 1, 2, 3, 4), a start week, and how many times to repeat. Fills that many weeks in one go.
+  - **Fill with block…** → pick a block → the week takes that block's sessions and is always linked to it. A pop-up confirms: *"This week will now change whenever Block 2 changes, unless you unlink it."* The same reminder sits under the week bar ("Linked to Block 2 · changes with the block · Unlink").
+  - **Fill several weeks…** (also a button under the week) → pick blocks in order (e.g. 1, 2, 3, 4), a start week, and how many times to repeat. Fills that many weeks in one go, all linked.
   - **Save week as block…** → name it → creates a new block from this week. The week becomes linked to the new block.
   - **Unlink from block** → keeps the current sessions, but future block edits no longer reach this week.
   - **Clear week.**
@@ -56,10 +56,32 @@ Today's sessions come from the Planner. If there is more than one, they are list
 
 Rule for a date: if `PlanDays` says the day is overridden, or the week is not linked, use `PlanItems` for that date. Otherwise use the linked block's `BlockItems` for that weekday. When a block changes, days already in the past get their planned sessions copied into `PlanItems` first, so history doesn't shift.
 
-## Open questions
+## Missed sessions
 
-1. Is linked-with-prompt the only way to fill a week, or do you also want a **"copy, never linked"** option? (Proposed: one mode, plus "Unlink" for when you want a copy.)
-2. **Fill weeks with blocks** (several weeks at once with repeat) — wanted now, or just one week at a time?
-3. Should a block edit also change **past** linked weeks? (Proposed: no, today onward.)
-4. Can a day hold **more than one session** (e.g. AM run, PM lift)? (Proposed: yes.)
-5. Should a session planned for a past day that wasn't done show as **missed**, or just stay quietly as planned?
+When the app opens and a past day has a planned session with no workout recorded (done in the app or entered by hand), a pop-up asks:
+
+> **Did you miss Upper Strength A?** Tue, Nov 18
+> **Yes, missed**  ·  **No, I did it**
+
+- **Yes, missed** → the session is marked skipped for that day (optional note, e.g. "travel"). It is not moved to another day.
+- **No, I did it** → opens manual entry for that session on that date, pre-filled with the plan, so the user can adjust what was actually done and save.
+- Several missed days are asked one after another (or "Mark all missed").
+- Only asked once per planned session.
+
+## Manual workout entry
+
+For logging a workout after it happened.
+
+- **Workout tab: a + button in the bottom corner → "Enter a workout".**
+- Choose: a planned session (today or earlier), any session from the library, or a blank workout (free text plus exercises).
+- Set date, start time and duration (used to match a Whoop workout).
+- The session's cards appear pre-filled with the plan. Edit reps, weights, times, rounds; mark items done or skipped; add notes and a photo; Save.
+- Saved workouts look the same in the Feed as ones run live, with a small "entered by hand" label.
+
+## Decisions (Paul, 2026-11-17)
+
+1. Fill with block **always links**, with a pop-up and a note under the week saying it will change with the block unless unlinked.
+2. **Fill several weeks** button under the week in the Planner.
+3. Block edits **do not** change past weeks.
+4. **More than one session per day** is fine.
+5. Missed sessions → "Did you miss…?" pop-up: Yes marks it skipped; No opens manual entry. Plus a general manual entry via the + button on the Workout tab.
