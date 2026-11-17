@@ -469,13 +469,13 @@ A.blankNext = (v, el) => {
   const p = MHParse.parse(st.text).sessions[0] || { phases: [], notes: [] };
   closeOv(o); manualWhen({ snap: p, name: st.name.trim() });
 };
-/** Date plus start and end in 15-minute steps. */
+/** Date plus start and end in 5-minute steps. */
 function manualWhen(opt) {
   const edit = opt.edit, T = today();
-  const nowQ = (() => { const d = new Date(); d.setMinutes(Math.floor(d.getMinutes() / 15) * 15, 0, 0); return d; })();
-  const hhmm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const nowQ = (() => { const d = new Date(); d.setMinutes(Math.floor(d.getMinutes() / 5) * 5, 0, 0); return d; })();
+  const hhmm = d => `${pad(d.getHours())}:${pad(Math.floor(d.getMinutes() / 5) * 5)}`;
   const st = edit ? { date: ACT.date, s: hhmm(new Date(ACT.start)), e: hhmm(new Date(ACT.end)) } : { date: opt.date || T, s: hhmm(new Date(nowQ - 3600000)), e: hhmm(nowQ) };
-  const times = []; for (let m = 0; m < 1440; m += 15) times.push(`${pad(Math.floor(m / 60))}:${pad(m % 60)}`);
+  const times = []; for (let m = 0; m < 1440; m += 5) times.push(`${pad(Math.floor(m / 60))}:${pad(m % 60)}`);
   const lab = t => { const [h, m] = t.split(':').map(Number); return new Date(2000, 0, 1, h, m).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); };
   openOv({
     render: () => `<h2>When was it?</h2><div class="small muted">Approximate is fine. If a Whoop workout overlaps, the times are corrected from Whoop.</div>

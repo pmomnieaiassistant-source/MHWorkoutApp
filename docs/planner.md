@@ -74,10 +74,10 @@ For logging a workout after it happened.
 
 - **Workout tab: a + button in the bottom corner → "Enter a workout".**
 - Choose: a planned session (today or earlier), any session from the library, or a blank workout (free text plus exercises).
-- Set the **date**, plus approximate **start and end times** picked in 15-minute steps (e.g. 6:15 to 7:00).
+- Set the **date**, plus approximate **start and end times** picked in 5-minute steps (e.g. 6:15 to 6:55).
 - The session's cards appear pre-filled with the plan. Edit reps, weights, times, rounds; mark items done or skipped; add notes and a photo; Save.
 - Saved workouts look the same in the Feed as ones run live, with a small "entered by hand" label.
-- **Whoop matching:** if a Whoop workout overlaps the entered window (allowing for the 15-minute rounding), the two link automatically and the Whoop data (heart rate, strain, calories, exact start/end) is pulled into the workout. The workout's times are then corrected to Whoop's exact times. Manual link/unlink is still available if the match is wrong.
+- **Whoop matching:** if a Whoop workout overlaps the entered window (allowing 15 minutes either side, since entered times are approximate), the two link automatically and the Whoop data (heart rate, strain, calories, exact start/end) is pulled into the workout. The workout's times are then corrected to Whoop's exact times. Manual link/unlink is still available if the match is wrong.
 
 ## Decisions (Paul, 2026-11-17)
 
