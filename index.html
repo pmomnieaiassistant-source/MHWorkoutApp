@@ -172,7 +172,15 @@ body.resting .fbottom { bottom: 92px; } body.resting .fbody { padding-bottom: ca
 .counter b { font-size: 40px; min-width: 70px; } .counter button { width: 54px; height: 54px; border-radius: 50%; background: rgba(0, 0, 0, .14); font-size: 26px; font-weight: 800; }
 .timer.done { background: #101215; color: var(--text); }
 
-/* feed */
+/* feed: each kind of card has its own colour */
+.card.k-day, .card.k-wo, .card.k-miss { overflow: hidden; }
+.card.k-day:before, .card.k-wo:before, .card.k-miss:before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+.card.k-day { background: linear-gradient(135deg, rgba(90, 176, 255, .13), rgba(90, 176, 255, .03) 60%), var(--card); }
+.card.k-day:before { background: var(--blue); } .card.k-day .fmt { color: var(--blue); }
+.card.k-wo { background: linear-gradient(135deg, rgba(198, 244, 50, .10), rgba(198, 244, 50, .02) 60%), var(--card); }
+.card.k-wo:before { background: var(--lime); }
+.card.k-miss { background: linear-gradient(135deg, rgba(255, 138, 61, .10), rgba(255, 138, 61, .02) 60%), var(--card); }
+.card.k-miss:before { background: var(--orange); } .card.k-miss .fmt { color: var(--orange); }
 .daycard .date { font-weight: 800; font-size: 18px; letter-spacing: -.01em; }
 .rec { display: inline-grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; font-weight: 900; font-size: 17px; flex: none; }
 .wo .corner { position: absolute; top: 12px; right: 12px; }

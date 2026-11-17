@@ -436,18 +436,23 @@ function vFeed() {
     const wonly = FEEDOPT.whoopOnly ? S.WhoopWorkouts.filter(x => x.date === d && !linked.has(x.id)) : [];
     if (!wd && !wos.length && !wonly.length && !FEEDOPT.empty && d !== T) continue;
     shown++;
-    html += dayCard(d, wd);
-    const items = wos.map(w => ({ t: w.start || d, h: woCard(w) })).concat(wonly.map(x => ({ t: x.start, h: whoopOnlyCard(x) }))).sort((a, b) => String(b.t).localeCompare(String(a.t)));
-    html += items.map(x => x.h).join('');
+    // Newest first. The day summary is stamped at wake-up, so that day's workouts sit above it.
+    const at = (iso, h) => iso ? Date.parse(iso) : pd(d).getTime() + h * 3600000;
+    const items = wos.map(w => ({ t: at(w.start, 12), h: woCard(w) }))
+      .concat(wonly.map(x => ({ t: at(x.start, 12), h: whoopOnlyCard(x) })))
+      .concat(wd ? [{ t: wakeAt(d, wd), h: dayCard(d, wd), day: true }] : [])
+      .sort((a, b) => b.t - a.t || (a.day ? 1 : -1));
+    html += `<div class="sec" style="margin-top:24px"><span>${esc(relDay(d))}${relDay(d) !== fmtD(d) ? ` <span class="dim" style="text-transform:none;letter-spacing:0;font-weight:600">· ${fmtD(d)}</span>` : ''}</span></div>`;
+    html += items.map(x => x.h).join('') || '<div class="small dim" style="padding:0 4px">Nothing logged</div>';
   }
   if (!shown) html += `<div class="empty"><b>Nothing here yet</b>Finish a workout or connect Whoop on Home.</div>`;
   return html + `<div style="text-align:center;margin-top:18px"><button class="btn gray sm" data-a="feedMore">Show earlier days</button></div>`;
 }
+const wakeAt = (d, wd) => Date.parse((wd.sleep && wd.sleep.end) || wd.cycleStart || '') || pd(d).getTime() + 6 * 3600000;
 function dayCard(d, wd) {
-  if (!wd) return `<div class="sec" style="margin-top:22px"><span>${esc(relDay(d))}</span></div>`;
   const sl = wd.sleep || {};
   const sleepMs = sl.inBed ? sl.inBed - (sl.awake || 0) : null;
-  return `<div class="card daycard"><div class="row"><div class="grow"><div class="date">${esc(relDay(d))}</div><div class="small muted">${fmtD(d)}</div></div>
+  return `<div class="card k-day"><div class="row"><div class="grow"><div class="fmt">Day summary</div><div class="date" style="margin-top:4px">${sl.end ? 'Woke ' + fmtClock(sl.end) : 'Recovery and sleep'}</div><div class="small muted">${wd.recovery != null ? 'Recovery' : ''}</div></div>
     ${wd.recovery != null ? `<div class="rec" style="background:${recCol(wd.recovery)}22;color:${recCol(wd.recovery)}">${Math.round(wd.recovery)}%</div>` : ''}</div>
     <div class="kv">
       ${sleepMs ? `<div><span>Sleep</span><b>${hm(sleepMs)}</b>${sl.perf != null ? `<div class="small muted">${Math.round(sl.perf)}% perf</div>` : ''}</div>` : ''}
@@ -462,9 +467,9 @@ function woStats(w) {
   return { done, sk, total: cards.length };
 }
 function woCard(w) {
-  if (w.status === 'skipped') return `<div class="card wo tap" data-a="woOpen" data-v="${w.id}" style="opacity:.75"><div class="row"><span class="chip orange">Missed</span><div class="grow ell" style="font-weight:700">${esc(w.name)}</div></div>${w.note ? `<div class="small muted" style="margin-top:8px">${esc(w.note)}</div>` : ''}</div>`;
+  if (w.status === 'skipped') return `<div class="card wo k-miss tap" data-a="woOpen" data-v="${w.id}"><div class="fmt">Missed workout</div><div class="row" style="margin-top:4px"><div class="grow ell" style="font-weight:700">${esc(w.name)}</div></div>${w.note ? `<div class="small muted" style="margin-top:8px">${esc(w.note)}</div>` : ''}</div>`;
   const x = whoopFor(w), st = woStats(w), dur = w.start && w.end ? (Date.parse(w.end) - Date.parse(w.start)) / 1000 : 0;
-  return `<div class="card wo tap" data-a="woOpen" data-v="${w.id}">
+  return `<div class="card wo k-wo tap" data-a="woOpen" data-v="${w.id}">
     <button class="ibtn corner" data-a="woExport" data-v="${w.id}" aria-label="Export data">${ic('share', 19)}</button>
     <div class="fmt">${w.manual ? 'Workout · entered by hand' : 'Workout'}</div>
     <h3 style="margin-top:4px;padding-right:46px">${esc(w.name)}</h3>
@@ -475,7 +480,7 @@ function woCard(w) {
 }
 function whoopOnlyCard(x) {
   const dur = (Date.parse(x.end) - Date.parse(x.start)) / 1000;
-  return `<div class="card tap" data-a="whoopOpen" data-v="${esc(x.id)}"><div class="fmt" style="color:var(--blue)">Whoop</div><h3 style="margin-top:4px">${esc(x.sport)}</h3>
+  return `<div class="card k-wo tap" data-a="whoopOpen" data-v="${esc(x.id)}"><div class="fmt">Workout · from Whoop</div><h3 style="margin-top:4px">${esc(x.sport)}</h3>
     <div class="small muted">${fmtClock(x.start)}–${fmtClock(x.end)} · ${durTxt(dur)}</div>
     <div class="statline"><span><b>${x.strain != null ? (+x.strain).toFixed(1) : '–'}</b> strain</span><span><b>${x.avgHr || '–'}</b> avg HR</span><span><b>${x.maxHr || '–'}</b> max</span>${x.kj ? `<span><b>${kcal(x.kj)}</b> kcal</span>` : ''}</div></div>`;
 }
