@@ -1,4 +1,4 @@
-# Workout App — Project Brief
+# MH Lift — Project Brief
 
 This file captures a brainstorm session for a new iPhone workout app. It is the starting spec. Nothing has been built yet. Read this fully before writing code, and confirm open questions with Paul before locking them in.
 
@@ -76,7 +76,7 @@ Runs today's scheduled session (user can also pick a different session).
 
 ### Workout formats to support
 
-Straight sets, EMOM, custom work/rest intervals, steady duration/distance. Likely also circuits, supersets, AMRAP (to confirm).
+Full list in `docs/session-format.md` (straight sets, supersets, circuits, complexes, EMOM, AMRAP, for time, ladders, intervals/Tabata, steady, run/erg intervals).
 
 ## Home tab
 
@@ -88,7 +88,6 @@ Straight sets, EMOM, custom work/rest intervals, steady duration/distance. Likel
 ## Import from LLM (session syntax)
 
 Full draft spec: `docs/session-format.md` (formats, syntax, examples, Sheet layout, builder approach).
-
 
 - The app provides a **downloadable syntax instructions file** describing the exact session format, with examples.
 - A user gives that file to any LLM (ChatGPT, Claude, etc.) along with their workout in any form; the LLM returns text in the app's syntax.
@@ -116,10 +115,18 @@ Full draft spec: `docs/session-format.md` (formats, syntax, examples, Sheet layo
 - Optional social feed.
 - Leaderboard.
 
+## Decisions log
+
+- **Name:** MH Lift. **Icon:** a simple barbell for now.
+- **Hosting:** GitHub Pages on this repo (public repo is fine).
+- **Whoop:** Paul has Whoop developer API access. Linking Whoop is done from the **Home tab** in the app (Connect Whoop button). The OAuth flow runs through Apps Script: the client secret lives in Script Properties (never in the repo), the Apps Script web app URL is the redirect URI, and tokens are stored per user and refreshed server-side.
+- **Program:** multi-week cycles supported. See `docs/session-format.md` section 7 for rounding, units and exercise names.
+- **Timed screen, phase 1:** no audio cues, no push. The clock is computed from timestamps so it is correct after the screen locks or the app is reopened; screen kept awake during timed blocks. Locked-screen audio cues (pre-rendered audio track) and music handling are a later build.
+- **Run / erg intervals:** in scope for the timed screen (work by time, distance or calories; targets for pace, split, watts, zone). Distance/calorie reps use a "Lap done" button.
+- **Lifter friend:** no need to wait; he will test the app and changes come later.
+
 ## Open questions
 
-- Confirm requirements with the lifter friend before building (Paul is meeting him first).
-- Which additional formats (circuit, superset, AMRAP) are needed.
 - Should a proposed session be suggested (accept/swap) or simply assigned for the day.
 - Home tab: charts vs. simple log to start.
-- User sign-in method for separating users.
+- Assumed unless Paul says otherwise: a new Sheet and Apps Script project (separate from the family app) deployed from Paul's Google account; personal-link sign-in (`?u=<key>`, passcode per user in Script Properties) as in the family app.
