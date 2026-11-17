@@ -64,7 +64,7 @@ When the app opens and a past day has a planned session with no workout recorded
 > **Yes, missed**  ·  **No, I did it**
 
 - **Yes, missed** → the session is marked skipped for that day (optional note, e.g. "travel"). It is not moved to another day.
-- **No, I did it** → opens manual entry for that session on that date, pre-filled with the plan, so the user can adjust what was actually done and save.
+- **No, I did it** → opens that session as a workout for that date, showing what was planned, so the user can change anything that was different and save.
 - Several missed days are asked one after another (or "Mark all missed").
 - Only asked once per planned session.
 
@@ -74,9 +74,10 @@ For logging a workout after it happened.
 
 - **Workout tab: a + button in the bottom corner → "Enter a workout".**
 - Choose: a planned session (today or earlier), any session from the library, or a blank workout (free text plus exercises).
-- Set date, start time and duration (used to match a Whoop workout).
+- Set the **date**, plus approximate **start and end times** picked in 15-minute steps (e.g. 6:15 to 7:00).
 - The session's cards appear pre-filled with the plan. Edit reps, weights, times, rounds; mark items done or skipped; add notes and a photo; Save.
 - Saved workouts look the same in the Feed as ones run live, with a small "entered by hand" label.
+- **Whoop matching:** if a Whoop workout overlaps the entered window (allowing for the 15-minute rounding), the two link automatically and the Whoop data (heart rate, strain, calories, exact start/end) is pulled into the workout. The workout's times are then corrected to Whoop's exact times. Manual link/unlink is still available if the match is wrong.
 
 ## Decisions (Paul, 2026-11-17)
 
