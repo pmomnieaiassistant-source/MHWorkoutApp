@@ -72,7 +72,7 @@ Buy-in / buy-out (a fixed piece before or after the main block, e.g. Murph's two
 
 ### Out of scope for a session (belongs to Program)
 
-- Weekly progression (5/3/1's 65/75/85 → 70/80/90 → 75/85/95 waves, linear +5 lb per session). A session is one workout. A multi-week program is several sessions on the schedule. Import can bring in several sessions at once (one `#` heading each), so one paste can produce "5/3/1 Week 1 Day 1" through "Week 4 Day 4".
+- Weekly progression (5/3/1's 65/75/85 → 70/80/90 → 75/85/95 waves, linear +5 lb per session). A session is one workout. A multi-week program is several sessions arranged into weekly Blocks on the Planner (see `docs/planner.md`). Import can bring in several sessions at once (one `#` heading each), so one paste can produce "5/3/1 Week 1 Day 1" through "Week 4 Day 4".
 - Training-max math. Percent loads are worked out at workout time from the user's saved maxes (see Section 5).
 
 ---
@@ -367,8 +367,7 @@ Steady 45:00 zone 2
 | Tab | One row per | Key columns |
 |---|---|---|
 | `Sessions` | session | user, id, name, tags, json (the full parsed structure), text (the syntax), rating, comments, created, lastDone |
-| `Programs` | program | user, id, name, cycleWeeks, startDate, currentWeek, active |
-| `Schedule` | program + cycle week + weekday | user, programId, week, day, sessionId (several rows allowed for a two-a-day) |
+| `Blocks`, `BlockItems`, `PlanWeeks`, `PlanItems` | see `docs/planner.md` | |
 | `Settings` | user + key | user, key, value (unit, rounding step, rest default...) |
 | `Workouts` | workout done | user, id, sessionId, date, start, end, notes, photo, whoopWorkoutId (match / manual override) |
 | `Sets` | logged set or block result | user, workoutId, cardIdx, stepIdx, setIdx, exercise, reps, load, unit, time, rounds, distance, cal, status (done / skipped), note |
@@ -398,7 +397,7 @@ The aim is that a plain session takes a few taps, and depth is there only when s
 
 ## 7. Decisions (confirmed with Paul, 2026-11-17)
 
-1. **Multi-week cycles: yes.** A program has a cycle length in weeks (1 = the same every week). Each week of the cycle assigns sessions to weekdays. The app tracks which cycle week the user is in, rolls to the next week each Monday, and loops back to week 1 at the end (with an option to restart or jump weeks by hand). This is how 5/3/1-style waves schedule themselves.
+1. **Multi-week programs: yes**, through Blocks and the Planner (see `docs/planner.md`). This replaces the earlier "cycle length" idea.
 2. **Percent loads round to the nearest 5 lb** (2.5 kg in kg mode). The rounding step is a per-user setting so it can be changed later (e.g. 2.5 lb with fractional plates).
 3. **Units:** each user has a default (lb or kg); any line can override it (`@ 24kg` in an lb profile stays kg).
 4. **Exercise names:** free text with autocomplete from the user's own history, plus a starter list. Aliases (e.g. "RDL" = "Romanian Deadlift") can be merged later so history lines up.

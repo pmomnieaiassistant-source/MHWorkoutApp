@@ -50,8 +50,14 @@ A private, scrolling timeline.
   - Browsable library, modeled on the recipe database in the household app: star rating, full details, last date performed, user comments. Sessions are reusable over time.
   - **Create session** by hand.
   - **Import from LLM** (see below).
-- **Schedule:** assign sessions to days of the week to form a program.
-- Terminology: "Program" = the overall plan; "Session" = one workout.
+- Three sections: **Sessions**, **Blocks**, **Planner** (full design in `docs/planner.md`, draft).
+- **Blocks:** a named week of sessions (Mon–Sun, any number of sessions per day, rest days allowed), e.g. "Block 1"–"Block 4" of a 4-week wave.
+- **Planner:** modeled on the Momnie family Planner. Week bar at the top (swipe left/right between weeks), days of the week below, each day with "+ Add".
+  - Add a session to a day, or **Fill week with block**.
+  - A filled week stays **linked** to its block: editing the block updates every linked week from today on.
+  - Editing a day in the Planner changes only that week, then asks "Update Block 2 to match?".
+  - **Save week as block** turns a week you built by hand into a new block.
+- Terminology: "Program" = the tab / overall plan; "Session" = one workout; "Block" = a reusable week of sessions.
 
 ## Workout tab
 
@@ -120,7 +126,7 @@ Full draft spec: `docs/session-format.md` (formats, syntax, examples, Sheet layo
 - **Name:** MH Lift. **Icon:** a simple barbell for now.
 - **Hosting:** GitHub Pages on this repo (public repo is fine).
 - **Whoop:** Paul has Whoop developer API access. Linking Whoop is done from the **Home tab** in the app (Connect Whoop button). The OAuth flow runs through Apps Script: the client secret lives in Script Properties (never in the repo), the Apps Script web app URL is the redirect URI, and tokens are stored per user and refreshed server-side.
-- **Program:** multi-week cycles supported. See `docs/session-format.md` section 7 for rounding, units and exercise names.
+- **Program:** Sessions / Blocks / Planner (replaces the earlier cycle-length idea). See `docs/planner.md`. See `docs/session-format.md` section 7 for rounding, units and exercise names.
 - **Timed screen, phase 1:** no audio cues, no push. The clock is computed from timestamps so it is correct after the screen locks or the app is reopened; screen kept awake during timed blocks. Locked-screen audio cues (pre-rendered audio track) and music handling are a later build.
 - **Run / erg intervals:** in scope for the timed screen (work by time, distance or calories; targets for pace, split, watts, zone). Distance/calorie reps use a "Lap done" button.
 - **Home tab tracking:** keep it simple to start, a log of entries per measurement; charts later.
