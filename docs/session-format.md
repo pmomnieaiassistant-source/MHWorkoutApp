@@ -367,7 +367,9 @@ Steady 45:00 zone 2
 | Tab | One row per | Key columns |
 |---|---|---|
 | `Sessions` | session | user, id, name, tags, json (the full parsed structure), text (the syntax), rating, comments, created, lastDone |
-| `Schedule` | user + weekday (+ week number for multi-week cycles) | user, week, day, sessionId |
+| `Programs` | program | user, id, name, cycleWeeks, startDate, currentWeek, active |
+| `Schedule` | program + cycle week + weekday | user, programId, week, day, sessionId (several rows allowed for a two-a-day) |
+| `Settings` | user + key | user, key, value (unit, rounding step, rest default...) |
 | `Workouts` | workout done | user, id, sessionId, date, start, end, notes, photo, whoopWorkoutId (match / manual override) |
 | `Sets` | logged set or block result | user, workoutId, cardIdx, stepIdx, setIdx, exercise, reps, load, unit, time, rounds, distance, cal, status (done / skipped), note |
 | `Maxes` | exercise max entry | user, exercise, type (1RM / TM / e1RM), value, unit, date |
@@ -394,12 +396,12 @@ The aim is that a plain session takes a few taps, and depth is there only when s
 
 ---
 
-## 7. Open questions on the format
+## 7. Decisions (confirmed with Paul, 2026-11-17)
 
-1. Weekly progression: should the Program tab support a multi-week cycle (week 1-4 rotating) so 5/3/1-style programs schedule themselves, or is "one session per week-day" enough to start?
-2. Should percent loads round to available plates (e.g. nearest 5 lb) or nearest 2.5? Per user setting?
-3. Default unit per user (lb or kg), with per-line override?
-4. Exercise library: free text with autocomplete (proposed), or a fixed list with categories?
+1. **Multi-week cycles: yes.** A program has a cycle length in weeks (1 = the same every week). Each week of the cycle assigns sessions to weekdays. The app tracks which cycle week the user is in, rolls to the next week each Monday, and loops back to week 1 at the end (with an option to restart or jump weeks by hand). This is how 5/3/1-style waves schedule themselves.
+2. **Percent loads round to the nearest 5 lb** (2.5 kg in kg mode). The rounding step is a per-user setting so it can be changed later (e.g. 2.5 lb with fractional plates).
+3. **Units:** each user has a default (lb or kg); any line can override it (`@ 24kg` in an lb profile stays kg).
+4. **Exercise names:** free text with autocomplete from the user's own history, plus a starter list. Aliases (e.g. "RDL" = "Romanian Deadlift") can be merged later so history lines up.
 
 ---
 
