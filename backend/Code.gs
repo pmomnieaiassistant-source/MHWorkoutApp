@@ -49,7 +49,8 @@ function doGet(e) {
 
 function route(user, b) {
   switch (b.action) {
-    case 'load': return { tables: loadAll(user), shared: loadShared(user), whoop: whoopStatus(user) };
+    case 'load': return { tables: loadAll(user), shared: loadShared(user), updates: loadUpdates(user), whoop: whoopStatus(user) };
+    case 'update_hide': hideUpdate(user, b.id); return {};
     case 'write': write(user, b.ops || []); return {};
     case 'whoop_start': return { url: whoopAuthUrl(user) };
     case 'whoop_sync': return whoopSync(user, b.days);
@@ -79,6 +80,38 @@ function loadAll(user) {
     out[t] = rowsOf(t).vals.filter(r => r[0] === user).map(r => { try { return JSON.parse(r[4]); } catch (e) { return null; } }).filter(Boolean);
   });
   return out;
+}
+
+// ---------- What's new messages ----------
+// One shared "Updates" tab that you fill in by hand in the Sheet: id | date | title | message | hiddenFrom.
+// message supports **bold**, *italic*, "## heading", "- " bullets, blank lines between paragraphs, and links.
+// hiddenFrom lists the people who tapped Hide; everyone else sees the message when they next open the app.
+const UPD_HEAD = ['id', 'date', 'title', 'message', 'hiddenFrom'];
+function updatesSheet() {
+  const ss = prop('SHEET_ID') ? SpreadsheetApp.openById(prop('SHEET_ID')) : SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName('Updates');
+  if (!sh) { sh = ss.insertSheet('Updates'); sh.getRange(1, 1, 1, UPD_HEAD.length).setValues([UPD_HEAD]).setFontWeight('bold'); sh.setFrozenRows(1); sh.getRange('A:B').setNumberFormat('@'); sh.setColumnWidth(4, 420); }
+  return sh;
+}
+const hiddenList = v => String(v || '').split(',').map(x => x.trim()).filter(Boolean);
+function loadUpdates(user) {
+  const sh = updatesSheet(), n = sh.getLastRow();
+  if (n < 2) return [];
+  return sh.getRange(2, 1, n - 1, UPD_HEAD.length).getValues().filter(r => r[2] || r[3]).map((r, i) => ({
+    id: String(r[0] || 'row' + (i + 2)), date: r[1] instanceof Date ? Utilities.formatDate(r[1], Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(r[1] || ''),
+    title: String(r[2] || ''), message: String(r[3] || ''), seen: hiddenList(r[4]).indexOf(user) >= 0
+  }));
+}
+function hideUpdate(user, id) {
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const sh = updatesSheet(), n = sh.getLastRow(); if (n < 2) return;
+    const vals = sh.getRange(2, 1, n - 1, UPD_HEAD.length).getValues();
+    vals.forEach((r, i) => {
+      if (String(r[0] || 'row' + (i + 2)) !== String(id)) return;
+      const h = hiddenList(r[4]); if (h.indexOf(user) < 0) { h.push(user); sh.getRange(i + 2, 5).setValue(h.join(', ')); }
+    });
+  } finally { lock.releaseLock(); }
 }
 
 /** Sessions and blocks other people marked public. A public block carries copies of its sessions so it can be added whole. */

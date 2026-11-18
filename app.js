@@ -50,7 +50,7 @@ const stars = (n, act) => `<span class="stars">${[1, 2, 3, 4, 5].map(i => `<span
 // ---------- data ----------
 const TABLES = ['Sessions', 'Blocks', 'PlanWeeks', 'PlanDays', 'Workouts', 'Measurements', 'Maxes', 'Settings', 'WhoopDays', 'WhoopWorkouts'];
 const S = {}; TABLES.forEach(t => S[t] = []);
-let ME = '', WHOOP = { configured: false, connected: false, lastSync: null }, ONLINE = true, SHARED = { Sessions: [], Blocks: [] };
+let ME = '', WHOOP = { configured: false, connected: false, lastSync: null }, ONLINE = true, SHARED = { Sessions: [], Blocks: [] }, UPDATES = [];
 const CFG = window.MH_CONFIG || {};
 
 // Personal link: ?u=<key>. Kept on the phone so the home-screen app remembers it.
@@ -73,7 +73,7 @@ function applyOp(o) {
   if (i >= 0) arr[i] = o.row; else arr.push(o.row);
 }
 let saveT = 0;
-const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => LS.set('data', { me: ME, whoop: WHOOP, tables: S, shared: SHARED }), 200); };
+const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => LS.set('data', { me: ME, whoop: WHOOP, tables: S, shared: SHARED, updates: UPDATES }), 200); };
 let QUEUE = LS.get('queue', []);
 
 /** Write rows: [{t, row}] (whole row, insert or replace) or [{t, del: id}]. Applied here at once, then sent to the server. */
@@ -114,6 +114,7 @@ async function loadServer() {
     const j = await api('load');
     TABLES.forEach(t => S[t] = j.tables[t] || []);
     if (j.shared) SHARED = j.shared;
+    if (j.updates) UPDATES = j.updates;
     QUEUE.forEach(applyOp);
     persist(); setOnline(true); afterData(); render();
     flush();
@@ -732,8 +733,52 @@ function sleepAvgHtml() {
 }
 A.sleepWin = n => { SLEEPWIN = +n; render(); };
 
+// ---------- What's new (messages from the Updates tab in the Sheet) ----------
+/** Light rich text: **bold**, *italic*, "## heading", "- " bullets, blank line = new paragraph, links. */
+function md(s) {
+  const inline = x => esc(x).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, '$1<i>$2</i>')
+    .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  const out = [];
+  String(s || '').replace(/\r/g, '').split(/\n\s*\n/).forEach(par => {
+    let para = [], list = [];
+    const flushP = () => { if (para.length) out.push('<p style="margin:10px 0;line-height:1.5">' + para.join('<br>') + '</p>'); para = []; };
+    const flushL = () => { if (list.length) out.push('<ul style="padding-left:20px;margin:10px 0;line-height:1.5">' + list.map(x => '<li style="margin:4px 0">' + x + '</li>').join('') + '</ul>'); list = []; };
+    par.split('\n').forEach(l => {
+      if (!l.trim()) return;
+      if (/^\s*#{1,3}\s/.test(l)) { flushP(); flushL(); out.push('<div style="font-weight:800;font-size:17px;margin:16px 0 4px">' + inline(l.replace(/^\s*#{1,3}\s/, '')) + '</div>'); }
+      else if (/^\s*[-•*]\s/.test(l)) { flushP(); list.push(inline(l.replace(/^\s*[-•*]\s/, ''))); }
+      else { flushL(); para.push(inline(l)); }
+    });
+    flushP(); flushL();
+  });
+  return out.join('');
+}
+const updateHtml = u => `<div class="fmt">What's new${u.date ? ' · ' + esc(fmtD(u.date)) : ''}</div><h2 style="margin-top:6px;font-size:23px">${esc(u.title)}</h2><div style="font-size:15.5px">${md(u.message)}</div>`;
+/** Show unseen messages one after another. Close = see it again next time; Hide = never again for this person. Then carries on with `then`. */
+function showUpdates(then) {
+  const q = UPDATES.filter(u => !u.seen).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const next = () => {
+    const u = q.shift(); if (!u) { if (then) then(); return; }
+    const o = openOv({
+      modal: true,
+      render: () => updateHtml(u) + `<div class="btns"><button class="btn gray" data-a="updClose">Close</button><button class="btn" data-a="updHide" data-v="${esc(u.id)}">Hide</button></div>`,
+      onClose: () => setTimeout(next, 220)
+    });
+    o.upd = u;
+  };
+  next();
+}
+A.updClose = (v, el) => closeOv(ovOf(el));
+A.updHide = async (id, el) => {
+  const o = ovOf(el), u = UPDATES.find(x => String(x.id) === String(id));
+  if (u) u.seen = true; persist(); closeOv(o);
+  try { await api('update_hide', { id }); } catch (e) { toast('Will hide it once you are back online'); LS.set('updHideQueue', (LS.get('updHideQueue', []) || []).concat([id])); }
+};
+A.updatesAll = () => openOv({ full: true, render: () => backBar("What's new") + `<div class="fbody">${UPDATES.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(u => `<div class="card">${updateHtml(u)}</div>`).join('') || '<div class="empty">No messages yet.</div>'}</div>` });
+async function flushHides() { const q = LS.get('updHideQueue', []) || []; if (!q.length || !serverMode()) return; for (const id of q) { try { await api('update_hide', { id }); } catch (e) { return; } } LS.set('updHideQueue', []); }
+
 const fmtMeas = (t, v) => t === 'Height' && UNIT() === 'lb' ? `${Math.floor(v / 12)}′${Math.round(v % 12)}″` : (Math.round(v * 10) / 10);
-A.homeMenu = () => menu('Home', [{ label: 'Add a measurement type', a: 'mTypeAdd' }, serverMode() ? { label: 'Reload data from the Sheet', a: 'reload' } : null, WHOOP.connected ? { label: 'Sync Whoop now', a: 'whoopSyncNow' } : null]);
+A.homeMenu = () => menu('Home', [UPDATES.length ? { label: "What's new", a: 'updatesAll' } : null, { label: 'Add a measurement type', a: 'mTypeAdd' }, serverMode() ? { label: 'Reload data from the Sheet', a: 'reload' } : null, WHOOP.connected ? { label: 'Sync Whoop now', a: 'whoopSyncNow' } : null]);
 A.reload = () => { loadServer(); toast('Reloading'); };
 A.setUnit = u => setSetting('unit', u).then(() => setSetting('round', u === 'kg' ? 2.5 : 5));
 A.setRound = s => setSetting('round', +s);

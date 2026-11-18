@@ -537,9 +537,9 @@ let MISS_LATER = false;
 // =====================================================================
 (function boot() {
   const c = LS.get('data', null);
-  if (c && c.tables) { TABLES.forEach(t => S[t] = c.tables[t] || []); ME = c.me || ''; WHOOP = c.whoop || WHOOP; if (c.shared) SHARED = c.shared; }
+  if (c && c.tables) { TABLES.forEach(t => S[t] = c.tables[t] || []); ME = c.me || ''; WHOOP = c.whoop || WHOOP; if (c.shared) SHARED = c.shared; if (c.updates) UPDATES = c.updates; }
   render();
-  if (serverMode()) loadServer().then(() => { if (!MISS_LATER) checkMissed(); });
+  if (serverMode()) loadServer().then(() => { flushHides(); if (!ACT) showUpdates(() => { if (!MISS_LATER) checkMissed(); }); else if (!MISS_LATER) checkMissed(); });
   else setTimeout(checkMissed, 600);
   setInterval(() => { const e = $('elapsed'); if (e && ACT) e.textContent = mmss((Date.now() - ACT.startAt) / 1000); }, 1000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (serverMode()) { flush(); } render(); } });

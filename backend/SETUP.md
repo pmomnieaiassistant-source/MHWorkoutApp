@@ -56,3 +56,17 @@ The key is remembered on the phone. Data entered before the back end existed sta
 4. If they have a Whoop, they tap **Home → Connect Whoop**. The Whoop sandbox allows up to 10 members; if Whoop refuses their sign-in, check the members list for your app in the Whoop Developer Dashboard.
 
 To remove someone, delete their entry from `USERS`. Their rows stay in the Sheet (column `user`) until you delete them.
+
+## Posting a "What's new" message
+
+Works like the Momnie family app's Updates.
+
+1. Open the **Updates** tab in the MH Lift Sheet. It is created the first time the app loads after the back end is updated; columns: `id | date | title | message | hiddenFrom`.
+2. Add a row: any unique `id` (e.g. `u1`), a `date`, a `title`, and the `message`. The message can use:
+   - `**bold**` and `*italic*`
+   - `## Heading` on its own line
+   - lines starting with `- ` for bullets
+   - a blank line (Alt+Enter twice inside the cell) for a new paragraph
+   - links, which become tappable
+3. Everyone sees it the next time they open the app. **Close** shows it again next time; **Hide** marks it seen for that person (their name is added to `hiddenFrom`). Delete a name from `hiddenFrom` to show it to them again.
+4. Anyone can reread all messages from Home → ☰ → What's new.

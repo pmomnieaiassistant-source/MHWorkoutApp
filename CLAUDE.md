@@ -103,6 +103,7 @@ Full list in `docs/session-format.md` (straight sets, supersets, circuits, compl
 - Personal tracking over time: weight, height, resting heart rate, max heart rate, plus custom user-defined measurements.
 - Whoop can auto-fill height, weight, max HR (body measurements) and resting HR (recovery). Each is a switch under Home → Whoop → "Update measurements from Whoop"; **all off by default**.
 - Start simple: a log of entries per measurement (charts can come later).
+- **What's new messages:** like the Momnie family app's Updates. Paul writes rows in the shared `Updates` tab of the Sheet (id, date, title, message with light rich text, hiddenFrom). On opening, each unseen message pops up: Close = show again next time, Hide = add the person to `hiddenFrom`. Reread from Home → ☰ → What's new.
 - The section is called **Status**. It starts with **sleep averages** from Whoop (bedtime, wake time, sleep per night; 7 or 30 days), then the measurements.
 
 ## Import from LLM (session syntax)
