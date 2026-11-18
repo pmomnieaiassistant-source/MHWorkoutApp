@@ -710,7 +710,7 @@ function vHome() {
   <div class="sec">Import from an LLM</div>
   <div class="card"><div class="small muted">Give this guide to ChatGPT, Claude or any other assistant along with your workout. Paste what it returns into Program → Sessions → Import.</div>
     <div class="btns"><a class="btn gray sm" href="syntax.txt" download="MH-Lift-session-syntax.txt">Download guide</a><button class="btn gray sm" data-a="copyGuide">${ic('copy', 17)}Copy guide</button></div></div>
-  <div class="small dim" style="text-align:center;margin-top:24px">MH Lift</div>`;
+  <div style="text-align:center;margin-top:28px"><div class="small muted" style="font-weight:700">MH Lift · Version ${esc(window.MH_VERSION || '')}</div><div class="small dim" style="margin-top:4px">Created on non-billable overhead time</div></div>`;
 }
 // Average bedtime, wake time and sleep from Whoop (main sleeps only). Clock times are averaged around noon so 11 PM and 1 AM average to midnight.
 function sleepAvgs(days) {

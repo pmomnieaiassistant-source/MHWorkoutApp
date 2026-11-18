@@ -543,5 +543,5 @@ let MISS_LATER = false;
   else setTimeout(checkMissed, 600);
   setInterval(() => { const e = $('elapsed'); if (e && ACT) e.textContent = mmss((Date.now() - ACT.startAt) / 1000); }, 1000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (serverMode()) { flush(); } render(); } });
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 })();

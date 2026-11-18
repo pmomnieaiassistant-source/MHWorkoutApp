@@ -1,6 +1,7 @@
 // MH Lift service worker: opens instantly from the phone's saved copy, then fetches a fresh copy for next time.
-const VERSION = 'mhl-v9';
-const SHELL = ['./', 'index.html', 'app.js', 'program.js', 'workout.js', 'parser.js', 'config.js', 'manifest.json', 'syntax.txt', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
+importScripts('version.js');
+const VERSION = 'mhl-' + self.MH_VERSION;
+const SHELL = ['./', 'version.js', 'index.html', 'app.js', 'program.js', 'workout.js', 'parser.js', 'config.js', 'manifest.json', 'syntax.txt', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

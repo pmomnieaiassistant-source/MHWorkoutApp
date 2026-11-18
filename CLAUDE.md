@@ -7,7 +7,7 @@ This file captures the brainstorm for MH Lift, an iPhone workout app, and the de
 - `index.html`: shell and all styles. `app.js`: data layer, helpers, overlays, Feed, Home, Whoop. `program.js`: Sessions, Blocks, Planner. `workout.js`: Workout tab, execution views, timers, manual entry, missed sessions, startup.
 - `parser.js`: session syntax parser (browser and Node). Tests: `node tests/parser.test.js` (runs every example in `docs/session-format.md`).
 - `backend/Code.gs`: Apps Script back end (generic per-user tables, Whoop OAuth and sync, photo upload). Setup: `backend/SETUP.md`.
-- `syntax.txt`: the guide users give to an LLM. `sw.js`: offline shell (bump `VERSION` when shipping changes). `config.js`: `apiUrl`.
+- `syntax.txt`: the guide users give to an LLM. `version.js`: app version, shown at the bottom of Home; **bump it with every change shipped** (the service worker uses it to refresh phones). `sw.js`: offline shell. `config.js`: `apiUrl`.
 - Without `apiUrl` and a personal key the app runs in local mode (phone storage only).
 - Use the three-bar options button for filters and screen options rather than adding visible controls.
 
