@@ -70,3 +70,19 @@ Works like the Momnie family app's Updates.
    - links, which become tappable
 3. Everyone sees it the next time they open the app. **Close** shows it again next time; **Hide** marks it seen for that person (their name is added to `hiddenFrom`). Delete a name from `hiddenFrom` to show it to them again.
 4. Anyone can reread all messages from Home → ☰ → What's new.
+
+## Automatic deploy from GitHub (optional)
+
+When files in `backend/` change on `main`, GitHub pushes them to the MH Lift Apps Script project and makes a new version of the existing web app (same URL, so Whoop and the app keep working). Workflow: `.github/workflows/deploy-backend.yml`.
+
+It stays off until these exist:
+
+1. **`backend/appsscript.json`**: from `clasp clone` in Cloud Shell (see below). The deploy only pushes the files in `backend/`, so every project file must be in the repo.
+2. Three repository secrets (Settings → Secrets and variables → Actions):
+   - `CLASP_RC_B64`: one line of base64 of your clasp login. In Cloud Shell: `base64 -w0 ~/.clasprc.json > ~/clasprc.b64`, download it, paste the line. Treat it like a password.
+   - `APPS_SCRIPT_ID`: the MH Lift project's Script ID (Apps Script → Project Settings).
+   - `APPS_SCRIPT_DEPLOYMENT_ID`: `AKfycbzWBFRmeNwnz-pLAyP1WG78UQg4uulH5RmOASvg9u_0UWjCsCHOHC5bu8y_e6molX89` (the part of the `/exec` URL between `/s/` and `/exec`).
+
+To set up, in Cloud Shell: `mkdir -p ~/mhlift && cd ~/mhlift`, then `clasp clone <Script ID>`, download every file it lists (except `.clasp.json`) into `backend/` in the repo. Use clasp 3 (`npm install -g @google/clasp@3`).
+
+Script properties (`USERS`, Whoop secrets) live in the project and are not changed by a deploy.
