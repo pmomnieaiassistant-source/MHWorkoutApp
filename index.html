@@ -21,7 +21,7 @@
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 -apple-system, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
-body { min-height: 100vh; overscroll-behavior-y: none; }
+body { min-height: 100vh; overscroll-behavior-y: none; touch-action: manipulation; }   /* no double-tap zoom; pinch still works */
 body.noscroll { overflow: hidden; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 input, textarea, select { font: inherit; color: var(--text); background: var(--card2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 12px 14px; width: 100%; outline: none; }
